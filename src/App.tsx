@@ -1,4 +1,3 @@
-import React from 'react';
 import { SalesCoach } from './components/SalesCoach';
 
 function App() {

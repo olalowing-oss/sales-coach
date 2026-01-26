@@ -45,7 +45,7 @@ export const useSpeechRecognition = ({
   const [status, setStatus] = useState<'idle' | 'listening' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
-  
+
   const recognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
   const audioConfigRef = useRef<SpeechSDK.AudioConfig | null>(null);
 
@@ -78,7 +78,7 @@ export const useSpeechRecognition = ({
       const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(subscriptionKey, region);
       speechConfig.speechRecognitionLanguage = language;
       speechConfig.enableDictation();
-      
+
       // Förbättra transkriberingskvalitet
       speechConfig.setProperty(
         SpeechSDK.PropertyId.SpeechServiceResponse_PostProcessingOption,
@@ -87,10 +87,10 @@ export const useSpeechRecognition = ({
 
       // Skapa audio config från mikrofon
       audioConfigRef.current = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
-      
+
       // Skapa recognizer
       recognizerRef.current = new SpeechSDK.SpeechRecognizer(
-        speechConfig, 
+        speechConfig,
         audioConfigRef.current
       );
 
@@ -107,7 +107,7 @@ export const useSpeechRecognition = ({
         if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
           const text = event.result.text;
           const confidence = calculateConfidence(event.result);
-          
+
           setInterimTranscript('');
           onFinalResult?.(text, confidence);
         } else if (event.result.reason === SpeechSDK.ResultReason.NoMatch) {
@@ -217,8 +217,8 @@ export const useMockSpeechRecognition = ({
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState<'idle' | 'listening' | 'error'>('idle');
   const [interimTranscript, setInterimTranscript] = useState('');
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Simulerade fraser för demo
   const mockPhrases = [
     "Ja, vi använder Teams idag men det är lite rörigt",
@@ -235,23 +235,23 @@ export const useMockSpeechRecognition = ({
     setIsListening(true);
     setStatus('listening');
     onStatusChange?.('listening');
-    
+
     let phraseIndex = 0;
-    
+
     // Simulera transkribering var 5:e sekund
     intervalRef.current = setInterval(() => {
       const phrase = mockPhrases[phraseIndex % mockPhrases.length];
-      
+
       // Simulera interim results
       const words = phrase.split(' ');
       let interim = '';
-      
+
       words.forEach((word, i) => {
         setTimeout(() => {
           interim += (i > 0 ? ' ' : '') + word;
           setInterimTranscript(interim);
           onInterimResult?.(interim);
-          
+
           // När alla ord är "transkriberade", trigga final result
           if (i === words.length - 1) {
             setTimeout(() => {
@@ -261,10 +261,10 @@ export const useMockSpeechRecognition = ({
           }
         }, i * 150);
       });
-      
+
       phraseIndex++;
     }, 5000);
-    
+
   }, [onInterimResult, onFinalResult, onStatusChange]);
 
   const stopListening = useCallback(() => {

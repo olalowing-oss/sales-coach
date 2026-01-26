@@ -1,12 +1,8 @@
-import { DetectedTrigger, CoachingTip, TipType } from '../types';
-import { 
-  TRIGGER_PATTERNS, 
-  OBJECTION_HANDLERS, 
-  OFFERS, 
+import { DetectedTrigger, CoachingTip } from '../types';
+import {
+  TRIGGER_PATTERNS,
+  OFFERS,
   BATTLECARDS,
-  CASE_STUDIES,
-  findOfferByTopic,
-  findBattlecardByCompetitor,
   findObjectionHandler,
   findRelevantCase
 } from '../data/knowledgeBase';
@@ -18,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const detectTriggers = (text: string): DetectedTrigger[] => {
   const textLower = text.toLowerCase();
   const triggers: DetectedTrigger[] = [];
-  
+
   for (const [patternName, pattern] of Object.entries(TRIGGER_PATTERNS)) {
     for (const keyword of pattern.keywords) {
       const position = textLower.indexOf(keyword.toLowerCase());
@@ -33,7 +29,7 @@ export const detectTriggers = (text: string): DetectedTrigger[] => {
       }
     }
   }
-  
+
   // Sortera efter position (första träffen först)
   return triggers.sort((a, b) => a.position - b.position);
 };
@@ -43,20 +39,20 @@ export const detectTriggers = (text: string): DetectedTrigger[] => {
  */
 const calculateConfidence = (text: string, keyword: string, position: number): number => {
   let confidence = 0.7; // Baskonfidens
-  
+
   // Högre konfidens om det är i början av meningen
   if (position < 20) confidence += 0.1;
-  
+
   // Högre konfidens om det finns negativa ord runt around
   const surroundingText = text.substring(Math.max(0, position - 20), position + keyword.length + 20).toLowerCase();
   const negativeWords = ['inte', 'nej', 'aldrig', 'svårt', 'problem', 'dåligt'];
   if (negativeWords.some(w => surroundingText.includes(w))) {
     confidence += 0.1;
   }
-  
+
   // Högre konfidens om det är en fråga
   if (text.includes('?')) confidence += 0.05;
-  
+
   return Math.min(confidence, 1.0);
 };
 
@@ -64,27 +60,27 @@ const calculateConfidence = (text: string, keyword: string, position: number): n
  * Genererar coaching-tips baserat på detekterade triggers
  */
 export const generateCoachingTips = (
-  text: string, 
+  text: string,
   existingTipIds: string[] = []
 ): CoachingTip[] => {
   const triggers = detectTriggers(text);
   const tips: CoachingTip[] = [];
   const processedPatterns = new Set<string>();
-  
+
   for (const trigger of triggers) {
     // Undvik dubbletter av samma mönster
     if (processedPatterns.has(trigger.pattern)) continue;
     processedPatterns.add(trigger.pattern);
-    
+
     const tip = createTipFromTrigger(trigger, text);
     if (tip && !existingTipIds.includes(tip.id)) {
       tips.push(tip);
     }
-    
+
     // Max 3 tips åt gången
     if (tips.length >= 3) break;
   }
-  
+
   return tips;
 };
 
@@ -94,12 +90,12 @@ export const generateCoachingTips = (
 const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): CoachingTip | null => {
   const baseId = uuidv4();
   const timestamp = Date.now();
-  
+
   switch (trigger.type) {
     case 'objection': {
       const handler = findObjectionHandler(originalText);
       if (!handler) return null;
-      
+
       return {
         id: baseId,
         type: 'objection',
@@ -115,20 +111,20 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         dismissed: false
       };
     }
-    
+
     case 'battlecard': {
       // Hitta vilken konkurrent det gäller
       const competitorPatterns = ['atea', 'tieto', 'cgi', 'knowit', 'inhouse'];
-      const matchedCompetitor = competitorPatterns.find(c => 
+      const matchedCompetitor = competitorPatterns.find(c =>
         trigger.pattern.toLowerCase().includes(c)
       );
-      
-      let battlecard = matchedCompetitor 
+
+      let battlecard = matchedCompetitor
         ? BATTLECARDS.find(bc => bc.id.includes(matchedCompetitor))
         : BATTLECARDS.find(bc => bc.id === 'vs-inhouse'); // Default
-        
+
       if (!battlecard) return null;
-      
+
       return {
         id: baseId,
         type: 'battlecard',
@@ -145,14 +141,14 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         dismissed: false
       };
     }
-    
+
     case 'offer': {
       // Matcha till rätt erbjudande
       const offer = findOfferForTrigger(trigger.pattern);
       if (!offer) return null;
-      
+
       const relatedCase = findRelevantCase(undefined, offer.name);
-      
+
       return {
         id: baseId,
         type: 'offer',
@@ -172,7 +168,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         dismissed: false
       };
     }
-    
+
     case 'solution': {
       // Generellt problemlösningstips
       return {
@@ -192,7 +188,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         dismissed: false
       };
     }
-    
+
     case 'expand': {
       // Kunden visar intresse - dags att boka möte
       return {
@@ -212,7 +208,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         dismissed: false
       };
     }
-    
+
     default:
       return null;
   }
@@ -230,7 +226,7 @@ const findOfferForTrigger = (triggerPattern: string): typeof OFFERS[0] | undefin
     'security': 'security-copilot',
     'powerplatform': 'power-platform'
   };
-  
+
   const offerId = patternToOffer[triggerPattern];
   return offerId ? OFFERS.find(o => o.id === offerId) : OFFERS[0];
 };
@@ -241,7 +237,7 @@ const findOfferForTrigger = (triggerPattern: string): typeof OFFERS[0] | undefin
 const formatPrice = (priceRange: { min: number; max: number; unit: string }): string => {
   const formatNum = (n: number) => n.toLocaleString('sv-SE');
   const unitText = priceRange.unit === 'fixed' ? 'kr' : priceRange.unit === 'hourly' ? 'kr/h' : 'kr/dag';
-  
+
   if (priceRange.min === priceRange.max) {
     return `${formatNum(priceRange.min)} ${unitText}`;
   }
@@ -257,25 +253,25 @@ export const analyzeConversation = (segments: string[]): {
   suggestedNextSteps: string[];
 } => {
   const fullText = segments.join(' ').toLowerCase();
-  
+
   // Identifiera ämnen
   const topics: string[] = [];
   if (fullText.includes('teams') || fullText.includes('samarbete')) topics.push('Modern Workplace');
   if (fullText.includes('copilot') || fullText.includes('ai')) topics.push('AI/Copilot');
   if (fullText.includes('azure') || fullText.includes('moln')) topics.push('Azure/Cloud');
   if (fullText.includes('säkerhet') || fullText.includes('security')) topics.push('Security');
-  
+
   // Enkel sentimentanalys
   const positiveWords = ['intressant', 'bra', 'perfekt', 'absolut', 'gärna', 'ja'];
   const negativeWords = ['nej', 'inte', 'dyrt', 'svårt', 'problem', 'tyvärr'];
-  
+
   const positiveCount = positiveWords.filter(w => fullText.includes(w)).length;
   const negativeCount = negativeWords.filter(w => fullText.includes(w)).length;
-  
+
   let sentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
   if (positiveCount > negativeCount + 1) sentiment = 'positive';
   if (negativeCount > positiveCount + 1) sentiment = 'negative';
-  
+
   // Föreslå nästa steg
   const suggestedNextSteps: string[] = [];
   if (sentiment === 'positive') {
@@ -288,6 +284,6 @@ export const analyzeConversation = (segments: string[]): {
     suggestedNextSteps.push('Skicka mer information');
     suggestedNextSteps.push('Boka demo');
   }
-  
+
   return { topics, sentiment, suggestedNextSteps };
 };
