@@ -1,21 +1,41 @@
-import { DetectedTrigger, CoachingTip } from '../types';
+import { DetectedTrigger, CoachingTip, TriggerPattern, Battlecard, ObjectionHandler, CaseStudy } from '../types';
 import {
-  TRIGGER_PATTERNS,
+  TRIGGER_PATTERNS as DEFAULT_TRIGGERS,
   OFFERS,
-  BATTLECARDS,
-  findObjectionHandler,
+  BATTLECARDS as DEFAULT_BATTLECARDS,
+  OBJECTION_HANDLERS as DEFAULT_OBJECTIONS,
+  CASE_STUDIES as DEFAULT_CASES,
   findRelevantCase
 } from '../data/knowledgeBase';
 import { v4 as uuidv4 } from 'uuid';
 
+// Typ för coachning-data som kan passas in
+export interface CoachingData {
+  triggerPatterns: Record<string, TriggerPattern>;
+  battlecards: Battlecard[];
+  objectionHandlers: ObjectionHandler[];
+  caseStudies: CaseStudy[];
+}
+
+// Default data för bakåtkompatibilitet
+const DEFAULT_DATA: CoachingData = {
+  triggerPatterns: DEFAULT_TRIGGERS,
+  battlecards: DEFAULT_BATTLECARDS,
+  objectionHandlers: DEFAULT_OBJECTIONS,
+  caseStudies: DEFAULT_CASES
+};
+
 /**
  * Detekterar triggers i text baserat på nyckelord
  */
-export const detectTriggers = (text: string): DetectedTrigger[] => {
+export const detectTriggers = (
+  text: string,
+  triggerPatterns: Record<string, TriggerPattern> = DEFAULT_DATA.triggerPatterns
+): DetectedTrigger[] => {
   const textLower = text.toLowerCase();
   const triggers: DetectedTrigger[] = [];
 
-  for (const [patternName, pattern] of Object.entries(TRIGGER_PATTERNS)) {
+  for (const [patternName, pattern] of Object.entries(triggerPatterns)) {
     for (const keyword of pattern.keywords) {
       const position = textLower.indexOf(keyword.toLowerCase());
       if (position !== -1) {
@@ -61,9 +81,10 @@ const calculateConfidence = (text: string, keyword: string, position: number): n
  */
 export const generateCoachingTips = (
   text: string,
-  existingTipIds: string[] = []
+  existingTipIds: string[] = [],
+  coachingData: CoachingData = DEFAULT_DATA
 ): CoachingTip[] => {
-  const triggers = detectTriggers(text);
+  const triggers = detectTriggers(text, coachingData.triggerPatterns);
   const tips: CoachingTip[] = [];
   const processedPatterns = new Set<string>();
 
@@ -72,7 +93,7 @@ export const generateCoachingTips = (
     if (processedPatterns.has(trigger.pattern)) continue;
     processedPatterns.add(trigger.pattern);
 
-    const tip = createTipFromTrigger(trigger, text);
+    const tip = createTipFromTrigger(trigger, text, coachingData);
     if (tip && !existingTipIds.includes(tip.id)) {
       tips.push(tip);
     }
@@ -85,15 +106,32 @@ export const generateCoachingTips = (
 };
 
 /**
+ * Hittar objection handler baserat på text
+ */
+const findObjectionHandler = (
+  text: string,
+  objectionHandlers: ObjectionHandler[]
+): ObjectionHandler | undefined => {
+  const textLower = text.toLowerCase();
+  return objectionHandlers.find(handler =>
+    handler.triggers.some(trigger => textLower.includes(trigger))
+  );
+};
+
+/**
  * Skapar ett coaching-tip från en trigger
  */
-const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): CoachingTip | null => {
+const createTipFromTrigger = (
+  trigger: DetectedTrigger,
+  originalText: string,
+  coachingData: CoachingData
+): CoachingTip | null => {
   const baseId = uuidv4();
   const timestamp = Date.now();
 
   switch (trigger.type) {
     case 'objection': {
-      const handler = findObjectionHandler(originalText);
+      const handler = findObjectionHandler(originalText, coachingData.objectionHandlers);
       if (!handler) return null;
 
       return {
@@ -101,11 +139,11 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         type: 'objection',
         priority: 'high',
         trigger: trigger.matchedKeyword,
-        title: `💡 Invändning: "${handler.objection}"`,
+        title: `Invändning: "${handler.objection}"`,
         content: handler.responses.short,
         talkingPoints: [
           handler.responses.detailed,
-          ...handler.responses.followUpQuestions.map(q => `Följdfråga: ${q}`)
+          ...handler.responses.followUpQuestions.map((q: string) => `Följdfråga: ${q}`)
         ],
         timestamp,
         dismissed: false
@@ -120,8 +158,8 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
       );
 
       let battlecard = matchedCompetitor
-        ? BATTLECARDS.find(bc => bc.id.includes(matchedCompetitor))
-        : BATTLECARDS.find(bc => bc.id === 'vs-inhouse'); // Default
+        ? coachingData.battlecards.find((bc: Battlecard) => bc.id.includes(matchedCompetitor))
+        : coachingData.battlecards.find((bc: Battlecard) => bc.id === 'vs-inhouse'); // Default
 
       if (!battlecard) return null;
 
@@ -130,7 +168,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         type: 'battlecard',
         priority: 'high',
         trigger: trigger.matchedKeyword,
-        title: `⚔️ Konkurrent: ${battlecard.competitor}`,
+        title: `Konkurrent: ${battlecard.competitor}`,
         content: battlecard.talkingPoints[0],
         talkingPoints: [
           `Deras svagheter: ${battlecard.theirWeaknesses.join(', ')}`,
@@ -154,7 +192,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         type: 'offer',
         priority: 'medium',
         trigger: trigger.matchedKeyword,
-        title: `📦 Erbjudande: ${offer.name}`,
+        title: `Erbjudande: ${offer.name}`,
         content: offer.shortDescription,
         talkingPoints: [
           `Pris: ${formatPrice(offer.priceRange)}`,
@@ -176,7 +214,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         type: 'suggestion',
         priority: 'medium',
         trigger: trigger.matchedKeyword,
-        title: '🎯 Möjlighet identifierad',
+        title: 'Möjlighet identifierad',
         content: 'Kunden har uttryckt frustration. Fördjupa dig i problemet innan du presenterar lösning.',
         talkingPoints: [
           '"Kan du berätta mer om det? Hur påverkar det er i vardagen?"',
@@ -196,7 +234,7 @@ const createTipFromTrigger = (trigger: DetectedTrigger, originalText: string): C
         type: 'suggestion',
         priority: 'high',
         trigger: trigger.matchedKeyword,
-        title: '🔥 Intresse! Boka möte nu',
+        title: 'Intresse! Boka möte nu',
         content: 'Kunden visar intresse. Föreslå ett konkret nästa steg.',
         talkingPoints: [
           '"Ska vi boka in 45 minuter där jag kan visa er exakt hur det fungerar?"',

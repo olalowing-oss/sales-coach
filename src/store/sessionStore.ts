@@ -1,13 +1,19 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  CallSession, 
-  CoachingTip, 
-  TranscriptSegment, 
+import {
+  CallSession,
+  CoachingTip,
+  TranscriptSegment,
   SessionStatus,
-  CustomerInfo 
+  CustomerInfo
 } from '../types';
-import { generateCoachingTips } from '../utils/triggers';
+import { generateCoachingTips, CoachingData } from '../utils/triggers';
+import { useCoachingStore } from './coachingStore';
+import {
+  saveSessionToDb,
+  saveSegmentToDb,
+  saveTipToDb
+} from '../lib/supabaseOperations';
 
 interface SessionState {
   // Session state
@@ -94,21 +100,28 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   stopSession: () => {
     const { session, segments } = get();
     if (!session) return;
-    
+
+    const updatedSession: CallSession = {
+      ...session,
+      status: 'stopped',
+      endedAt: new Date(),
+      transcript: {
+        ...session.transcript,
+        segments,
+        fullText: segments.map(s => s.text).join(' '),
+        duration: (Date.now() - session.startedAt.getTime()) / 1000
+      }
+    };
+
     set({
       status: 'stopped',
-      session: {
-        ...session,
-        status: 'stopped',
-        endedAt: new Date(),
-        transcript: {
-          ...session.transcript,
-          segments,
-          fullText: segments.map(s => s.text).join(' '),
-          duration: (Date.now() - session.startedAt.getTime()) / 1000
-        }
-      }
+      session: updatedSession
     });
+
+    // Spara till databas (asynkront, blockerar inte UI)
+    saveSessionToDb(updatedSession).catch(err =>
+      console.error('Failed to save session to DB:', err)
+    );
   },
 
   pauseSession: () => {
@@ -127,7 +140,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   addFinalTranscript: (text: string, confidence: number) => {
     const { segments, session } = get();
-    
+
     const newSegment: TranscriptSegment = {
       id: uuidv4(),
       text: text.trim(),
@@ -136,12 +149,19 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       confidence,
       isFinal: true
     };
-    
-    set({ 
+
+    set({
       segments: [...segments, newSegment],
       interimText: ''
     });
-    
+
+    // Spara segment till databas
+    if (session?.id) {
+      saveSegmentToDb(session.id, newSegment).catch(err =>
+        console.error('Failed to save segment to DB:', err)
+      );
+    }
+
     // Trigga coaching-analys
     get().processTranscriptForCoaching(text);
   },
@@ -153,23 +173,41 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   // === COACHING ===
 
   processTranscriptForCoaching: (text: string) => {
-    const { dismissedTipIds, coachingTips, conversationContext } = get();
-    
+    const { dismissedTipIds, coachingTips, conversationContext, session } = get();
+
+    // Hämta coachning-data från store
+    const coachingStore = useCoachingStore.getState();
+    const coachingData: CoachingData = {
+      triggerPatterns: coachingStore.triggerPatterns,
+      battlecards: coachingStore.battlecards,
+      objectionHandlers: coachingStore.objectionHandlers,
+      caseStudies: coachingStore.caseStudies
+    };
+
     // Generera nya tips baserat på texten
     const existingIds = [...coachingTips.map(t => t.id), ...dismissedTipIds];
-    const newTips = generateCoachingTips(text, existingIds);
-    
+    const newTips = generateCoachingTips(text, existingIds, coachingData);
+
     if (newTips.length > 0) {
       // Lägg till nya tips, behåll max 5 aktiva
       const updatedTips = [...newTips, ...coachingTips]
         .filter(t => !t.dismissed)
         .slice(0, 5);
-      
-      set({ 
+
+      set({
         coachingTips: updatedTips,
         // Uppdatera konversationskontext (behåll senaste 10)
         conversationContext: [...conversationContext, text].slice(-10)
       });
+
+      // Spara nya tips till databas
+      if (session?.id) {
+        newTips.forEach(tip => {
+          saveTipToDb(session.id, tip).catch(err =>
+            console.error('Failed to save tip to DB:', err)
+          );
+        });
+      }
     }
   },
 

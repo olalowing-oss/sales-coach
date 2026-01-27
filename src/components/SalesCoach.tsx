@@ -1,10 +1,14 @@
 import React, { useCallback, useEffect } from 'react';
-import { Mic, Square, Pause, Play, Trash2, Download, Settings } from 'lucide-react';
+import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { TranscriptPanel } from './TranscriptPanel';
 import { CoachingPanel } from './CoachingPanel';
 import { AdminPanel } from './AdminPanel';
+import { CoachingAdminPanel } from './CoachingAdminPanel';
+import { HistoryPanel } from './HistoryPanel';
+import { isSupabaseConfigured } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 // Konfiguration - byt ut mot riktiga nycklar i produktion
 const SPEECH_CONFIG = {
@@ -13,8 +17,8 @@ const SPEECH_CONFIG = {
   language: 'sv-SE'
 };
 
-// Använd mock i demo-läge
-const USE_MOCK = !import.meta.env.VITE_AZURE_SPEECH_KEY || import.meta.env.VITE_AZURE_SPEECH_KEY === 'demo-mode';
+// Kolla om Azure-nyckel finns
+const HAS_AZURE_KEY = import.meta.env.VITE_AZURE_SPEECH_KEY && import.meta.env.VITE_AZURE_SPEECH_KEY !== 'demo-mode';
 
 export const SalesCoach: React.FC = () => {
   const {
@@ -33,7 +37,27 @@ export const SalesCoach: React.FC = () => {
     getSessionSummary
   } = useSessionStore();
 
+  const { user, signOut } = useAuth();
+
   const [showAdmin, setShowAdmin] = React.useState(false);
+  const [showCoachingAdmin, setShowCoachingAdmin] = React.useState(false);
+  const [showHistory, setShowHistory] = React.useState(false);
+  const [showUserMenu, setShowUserMenu] = React.useState(false);
+
+  // Läs demo-läge från localStorage för att överleva page reload
+  const [forceDemoMode] = React.useState(() => {
+    return localStorage.getItem('forceDemoMode') === 'true';
+  });
+
+  // Använd mock om ingen Azure-nyckel finns eller om demo-läge är tvingat
+  const useMock = !HAS_AZURE_KEY || forceDemoMode;
+
+  // Växla demo-läge (kräver reload pga React hooks-regler)
+  const handleToggleDemo = () => {
+    const newMode = !forceDemoMode;
+    localStorage.setItem('forceDemoMode', String(newMode));
+    window.location.reload();
+  };
 
   // Välj rätt speech hook
   const speechHookOptions = {
@@ -46,7 +70,7 @@ export const SalesCoach: React.FC = () => {
     }
   };
 
-  const speechRecognition = USE_MOCK
+  const speechRecognition = useMock
     ? useMockSpeechRecognition(speechHookOptions)
     : useSpeechRecognition(speechHookOptions);
 
@@ -125,16 +149,29 @@ export const SalesCoach: React.FC = () => {
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold">
-                B3
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">
+                SC
               </div>
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
             </div>
 
-            {USE_MOCK && (
+            {useMock && (
               <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs rounded-full">
                 Demo-läge
               </span>
+            )}
+
+            {HAS_AZURE_KEY && (
+              <button
+                onClick={handleToggleDemo}
+                className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                  forceDemoMode
+                    ? 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30'
+                    : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
+                }`}
+              >
+                {forceDemoMode ? 'Byt till Azure' : 'Byt till Demo'}
+              </button>
             )}
           </div>
 
@@ -154,13 +191,70 @@ export const SalesCoach: React.FC = () => {
             )}
 
             <button
+              onClick={() => setShowCoachingAdmin(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              title="Coachning-inställningar"
+            >
+              <Lightbulb className="w-4 h-4" />
+              <span className="text-sm">Coachning</span>
+            </button>
+
+            <button
               onClick={() => setShowAdmin(true)}
               className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
               title="Hantera erbjudanden"
             >
               <Settings className="w-4 h-4" />
-              <span className="text-sm">Admin</span>
+              <span className="text-sm">Erbjudanden</span>
             </button>
+
+            {isSupabaseConfigured() && (
+              <button
+                onClick={() => setShowHistory(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+                title="Samtalshistorik"
+              >
+                <History className="w-4 h-4" />
+                <span className="text-sm">Historik</span>
+              </button>
+            )}
+
+            {/* User menu */}
+            <div className="relative">
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              >
+                <User className="w-4 h-4" />
+                <span className="text-sm">{user?.email?.split('@')[0] || 'User'}</span>
+              </button>
+
+              {showUserMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowUserMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20">
+                    <div className="p-2">
+                      <div className="px-3 py-2 text-sm text-gray-400 border-b border-gray-700">
+                        {user?.email}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          await signOut();
+                          setShowUserMenu(false);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2 mt-1 text-sm text-red-400 hover:bg-gray-700 rounded transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        Logga ut
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -252,8 +346,10 @@ export const SalesCoach: React.FC = () => {
         </div>
       </main>
 
-      {/* Admin Panel */}
+      {/* Admin Panels */}
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
+      {showCoachingAdmin && <CoachingAdminPanel onClose={() => setShowCoachingAdmin(false)} />}
+      {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
     </div>
   );
 };
