@@ -164,7 +164,7 @@ export async function loadSessionSegments(sessionId: string): Promise<Transcript
       timestamp: seg.timestamp_ms,
       speaker: (seg.speaker as 'seller' | 'customer' | 'unknown') || 'unknown',
       confidence: seg.confidence || 0,
-      isFinal: seg.is_final
+      isFinal: seg.is_final ?? true
     }));
   } catch (error) {
     console.error('Error in loadSessionSegments:', error);
@@ -431,7 +431,7 @@ export async function loadCaseStudiesFromDb() {
       solution: row.solution,
       results: row.results,
       quote: row.quote || undefined,
-      isPublic: row.is_public
+      isPublic: row.is_public ?? true
     }));
   } catch (error) {
     console.error('Error in loadCaseStudiesFromDb:', error);

@@ -58,6 +58,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       transcript_segments: {
         Row: {
@@ -90,6 +91,7 @@ export interface Database {
           is_final?: boolean | null
           created_at?: string
         }
+        Relationships: []
       }
       session_coaching_tips: {
         Row: {
@@ -134,6 +136,7 @@ export interface Database {
           related_case_id?: string | null
           created_at?: string
         }
+        Relationships: []
       }
       trigger_patterns: {
         Row: {
@@ -163,6 +166,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       battlecards: {
         Row: {
@@ -201,6 +205,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       objection_handlers: {
         Row: {
@@ -239,6 +244,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       case_studies: {
         Row: {
@@ -280,6 +286,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       offers: {
         Row: {
@@ -330,6 +337,7 @@ export interface Database {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
     }
     Views: {

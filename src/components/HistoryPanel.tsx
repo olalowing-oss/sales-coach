@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, TrendingUp, TrendingDown, Minus, Trash2, Eye } from 'lucide-react';
-import { loadSessionsFromDb, loadSessionSegments, deleteSessionFromDb } from '../lib/supabaseOperations';
+import { loadSessionsFromDb, deleteSessionFromDb } from '../lib/supabaseOperations';
 import type { Database } from '../types/database';
 
 type DbSession = Database['public']['Tables']['call_sessions']['Row'];
@@ -140,7 +140,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
 
                       <div className="flex items-center gap-2 text-gray-400">
                         <Clock className="w-4 h-4" />
-                        {formatDuration(session.duration_seconds)}
+                        {formatDuration(session.duration_seconds || 0)}
                       </div>
 
                       {session.sentiment && (
