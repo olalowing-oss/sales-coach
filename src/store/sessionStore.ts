@@ -5,49 +5,58 @@ import {
   CoachingTip,
   TranscriptSegment,
   SessionStatus,
-  CustomerInfo
+  CustomerInfo,
+  CallAnalysis
 } from '../types';
 import { generateCoachingTips, CoachingData } from '../utils/triggers';
 import { useCoachingStore } from './coachingStore';
 import {
   saveSessionToDb,
   saveSegmentToDb,
-  saveTipToDb
+  saveTipToDb,
+  saveSessionAnalysisToDb
 } from '../lib/supabaseOperations';
+import { updateAnalysisWithNewText } from '../utils/analysisExtractor';
 
 interface SessionState {
   // Session state
   session: CallSession | null;
   status: SessionStatus;
-  
+
   // Transkription
   segments: TranscriptSegment[];
   interimText: string;
-  
+
   // Coaching
   coachingTips: CoachingTip[];
   dismissedTipIds: string[];
-  
+
   // Context för AI
   conversationContext: string[];
-  
+
+  // Live analysis
+  liveAnalysis: Partial<CallAnalysis>;
+
   // Actions
   startSession: (customer?: CustomerInfo) => void;
   stopSession: () => void;
   pauseSession: () => void;
   resumeSession: () => void;
-  
+
   // Transkription
   addInterimTranscript: (text: string) => void;
   addFinalTranscript: (text: string, confidence: number) => void;
   clearTranscript: () => void;
-  
+
   // Coaching
   processTranscriptForCoaching: (text: string) => void;
   addCoachingTip: (tip: Omit<CoachingTip, 'id' | 'timestamp' | 'dismissed'>) => void;
   dismissTip: (tipId: string) => void;
   clearAllTips: () => void;
-  
+
+  // Analysis
+  updateLiveAnalysis: (analysis: Partial<CallAnalysis>) => void;
+
   // Export
   getSessionSummary: () => string;
 }
@@ -61,9 +70,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   coachingTips: [],
   dismissedTipIds: [],
   conversationContext: [],
+  liveAnalysis: { probability: 50, isAnalyzed: false },
 
   // === SESSION ACTIONS ===
-  
+
   startSession: (customer?: CustomerInfo) => {
     const sessionId = uuidv4();
     const now = new Date();
@@ -95,7 +105,8 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       interimText: '',
       coachingTips: [],
       dismissedTipIds: [],
-      conversationContext: []
+      conversationContext: [],
+      liveAnalysis: { probability: 50, isAnalyzed: false }
     });
 
     // Spara sessionen till databasen direkt så att RLS fungerar för segments
@@ -105,7 +116,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   stopSession: () => {
-    const { session, segments } = get();
+    const { session, segments, liveAnalysis } = get();
     if (!session) return;
 
     const updatedSession: CallSession = {
@@ -125,10 +136,28 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       session: updatedSession
     });
 
-    // Spara till databas (asynkront, blockerar inte UI)
+    // Spara session till databas (asynkront, blockerar inte UI)
     saveSessionToDb(updatedSession).catch(err =>
       console.error('Failed to save session to DB:', err)
     );
+
+    // Spara live-analysen till databasen om det finns någon data
+    const hasAnalysisData =
+      liveAnalysis.industry ||
+      liveAnalysis.companySize ||
+      liveAnalysis.callPurpose ||
+      liveAnalysis.callOutcome ||
+      (liveAnalysis.productsDiscussed && liveAnalysis.productsDiscussed.length > 0);
+
+    if (hasAnalysisData) {
+      saveSessionAnalysisToDb(session.id, {
+        ...liveAnalysis,
+        isAnalyzed: true,
+        analyzedAt: new Date()
+      }).catch(err =>
+        console.error('Failed to save analysis to DB:', err)
+      );
+    }
   },
 
   pauseSession: () => {
@@ -146,7 +175,7 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   },
 
   addFinalTranscript: (text: string, confidence: number) => {
-    const { segments, session } = get();
+    const { segments, session, liveAnalysis } = get();
 
     const newSegment: TranscriptSegment = {
       id: uuidv4(),
@@ -171,6 +200,10 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
     // Trigga coaching-analys
     get().processTranscriptForCoaching(text);
+
+    // Uppdatera live-analys baserat på ny text
+    const updatedAnalysis = updateAnalysisWithNewText(liveAnalysis, text);
+    set({ liveAnalysis: updatedAnalysis });
   },
 
   clearTranscript: () => {
@@ -240,6 +273,12 @@ export const useSessionStore = create<SessionState>((set, get) => ({
 
   clearAllTips: () => {
     set({ coachingTips: [] });
+  },
+
+  // === ANALYSIS ===
+
+  updateLiveAnalysis: (analysis: Partial<CallAnalysis>) => {
+    set({ liveAnalysis: analysis });
   },
 
   // === EXPORT ===

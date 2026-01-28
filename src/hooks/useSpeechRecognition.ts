@@ -219,16 +219,26 @@ export const useMockSpeechRecognition = ({
   const [interimTranscript, setInterimTranscript] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Simulerade fraser för demo
+  // Simulerade fraser för demo - ett realistiskt säljsamtal
   const mockPhrases = [
-    "Ja, vi använder Teams idag men det är lite rörigt",
-    "Vi har redan avtal med Atea faktiskt",
-    "Det låter intressant, men det är för dyrt",
-    "Kan du berätta mer om Copilot?",
-    "Vi har problem med att hitta dokument",
-    "Ring tillbaka senare, har inte tid nu",
-    "Vad kostar det?",
-    "Vi har ungefär 500 användare",
+    "Hej! Ja, jag heter Anna Svensson och jag är IT-chef på Nordiska Byggsystem AB",
+    "Vi är ett medelstort byggföretag med cirka 250 anställda",
+    "Just nu använder vi en blandning av olika verktyg. Teams har vi för möten",
+    "Men vi har också Google Workspace för mail och dokument, vilket är lite rörigt faktiskt",
+    "Det största problemet vi har är att hitta dokument och information. Folk sparar saker överallt",
+    "Vi har också problem med samarbete mellan projekt. Mycket information försvinner mellan teamen",
+    "Vi har tittat på olika lösningar, men Atea visade oss något för ett par månader sen som var för dyrt",
+    "Vårt avtal med Google löper ut om tre månader så vi måste bestämma oss snart",
+    "Berätta mer om Microsoft 365 och vad ni kan erbjuda",
+    "Copilot låter intressant! Kan det hjälpa oss att hitta information snabbare?",
+    "Hur fungerar integrationen mellan Teams och SharePoint?",
+    "Vi har också säkerhetskrav från våra kunder. Uppfyller ni GDPR och ISO-standarder?",
+    "Vad skulle detta kosta för oss? Vi har budget på omkring 500 000 kronor per år",
+    "Det låter faktiskt bättre än vad Atea erbjöd. De kunde inte lösa dokumentproblemet",
+    "Kan ni visa en demo för hela ledningsgruppen nästa vecka? Vi är fem personer",
+    "Perfekt! Vi vill verkligen komma igång så snabbt som möjligt",
+    "Skicka över en offert så diskuterar vi det internt",
+    "Tack så mycket! Det här känns som precis vad vi behöver för att effektivisera vårt arbete"
   ];
 
   const startListening = useCallback(async () => {
@@ -238,11 +248,16 @@ export const useMockSpeechRecognition = ({
 
     let phraseIndex = 0;
 
-    // Simulera transkribering var 5:e sekund
-    intervalRef.current = setInterval(() => {
-      const phrase = mockPhrases[phraseIndex % mockPhrases.length];
+    // Simulera transkribering med varierande pauser mellan meningar
+    const speakNextPhrase = () => {
+      if (phraseIndex >= mockPhrases.length) {
+        // Samtalet är slut
+        return;
+      }
 
-      // Simulera interim results
+      const phrase = mockPhrases[phraseIndex];
+
+      // Simulera interim results ord för ord
       const words = phrase.split(' ');
       let interim = '';
 
@@ -257,19 +272,27 @@ export const useMockSpeechRecognition = ({
             setTimeout(() => {
               setInterimTranscript('');
               onFinalResult?.(phrase, 0.95);
-            }, 200);
-          }
-        }, i * 150);
-      });
 
-      phraseIndex++;
-    }, 5000);
+              phraseIndex++;
+
+              // Varierande pauser mellan meningar (4-8 sekunder) för mer realism
+              const nextDelay = 4000 + Math.random() * 4000;
+              intervalRef.current = setTimeout(speakNextPhrase, nextDelay) as any;
+            }, 300);
+          }
+        }, i * 120);
+      });
+    };
+
+    // Starta första frasen efter en kort delay
+    intervalRef.current = setTimeout(speakNextPhrase, 1000) as any;
 
   }, [onInterimResult, onFinalResult, onStatusChange]);
 
   const stopListening = useCallback(() => {
     if (intervalRef.current) {
-      clearInterval(intervalRef.current);
+      clearTimeout(intervalRef.current);
+      intervalRef.current = null;
     }
     setIsListening(false);
     setInterimTranscript('');
@@ -280,7 +303,7 @@ export const useMockSpeechRecognition = ({
   useEffect(() => {
     return () => {
       if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+        clearTimeout(intervalRef.current);
       }
     };
   }, []);

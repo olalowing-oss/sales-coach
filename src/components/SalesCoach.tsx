@@ -8,6 +8,7 @@ import { CoachingPanel } from './CoachingPanel';
 import { AdminPanel } from './AdminPanel';
 import { CoachingAdminPanel } from './CoachingAdminPanel';
 import { HistoryPanel } from './HistoryPanel';
+import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,6 +28,7 @@ export const SalesCoach: React.FC = () => {
     segments,
     interimText,
     coachingTips,
+    liveAnalysis,
     startSession,
     stopSession,
     pauseSession,
@@ -35,7 +37,8 @@ export const SalesCoach: React.FC = () => {
     addFinalTranscript,
     clearTranscript,
     clearAllTips,
-    getSessionSummary
+    getSessionSummary,
+    updateLiveAnalysis
   } = useSessionStore();
 
   const { user, signOut } = useAuth();
@@ -411,6 +414,16 @@ export const SalesCoach: React.FC = () => {
 
           <CoachingPanel tips={coachingTips} />
         </div>
+
+        {/* Live Analysis Panel - shown during active call */}
+        {isActive && (
+          <div className="mt-6">
+            <LiveCallAnalysisPanel
+              analysis={liveAnalysis}
+              onUpdate={updateLiveAnalysis}
+            />
+          </div>
+        )}
 
         {/* Keyboard shortcuts hint */}
         <div className="mt-6 text-center text-sm text-gray-500">
