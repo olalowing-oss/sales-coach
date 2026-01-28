@@ -309,10 +309,15 @@ export function updateAnalysisWithNewText(
 ): Partial<CallAnalysis> {
   const extracted = extractAnalysisFromTranscript(newText, currentAnalysis);
 
+  // Merge nextSteps - extract already handles the merging, so use that value
+  // If extracted.nextSteps exists, it already includes currentAnalysis.nextSteps merged in
+  const mergedNextSteps = extracted.nextSteps || currentAnalysis.nextSteps;
+
   // Merge arrays without duplicates
   return {
     ...currentAnalysis,
     ...extracted,
+    nextSteps: mergedNextSteps,
     productsDiscussed: [
       ...new Set([...(currentAnalysis.productsDiscussed || []), ...(extracted.productsDiscussed || [])])
     ],
