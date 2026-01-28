@@ -89,6 +89,56 @@ const TIMEFRAME_PATTERNS = [
   { pattern: /nästa år|6-12 månader/i, timeframe: '6-12 månader' as const }
 ];
 
+const CALL_OUTCOME_PATTERNS = [
+  {
+    pattern: /boka(t|r|de)? (möte|demo|träff)|visa.*demo|möte nästa|träffa(s|ts)?|kommer på besök/i,
+    outcome: 'Bokat möte' as const
+  },
+  {
+    pattern: /skicka(r| över)? (offert|anbud|prislista)|ge er ett pris|offertera/i,
+    outcome: 'Skickat offert' as const
+  },
+  {
+    pattern: /tänka på det|fundera|diskutera internt|prata med|kollegor|ledning|återkomma/i,
+    outcome: 'Behöver tänka' as const
+  },
+  {
+    pattern: /nej tack|inte intresserad|passar inte|inte för oss|avböja/i,
+    outcome: 'Nej tack' as const
+  },
+  {
+    pattern: /kontakta|höra av|ring(a|er)? (upp|tillbaka)|följ(a|er)? upp|återkoppla/i,
+    outcome: 'Uppföljning krävs' as const
+  },
+  {
+    pattern: /signera(t|r)?|skriv(a|er)? på|avtal(et)?|affär(en)?.*klar|deal|köper/i,
+    outcome: 'Avslutad affär' as const
+  }
+];
+
+const NEXT_STEPS_PATTERNS = [
+  {
+    pattern: /boka(t|r)? demo|visa demo|demonstrera|möte nästa (vecka|månad)/i,
+    nextStep: 'Boka demo/möte'
+  },
+  {
+    pattern: /skicka offert|ge pris|offertera|anbud/i,
+    nextStep: 'Skicka offert'
+  },
+  {
+    pattern: /skicka (mer )?information|mejla|mail|dokumentation/i,
+    nextStep: 'Skicka information'
+  },
+  {
+    pattern: /ring tillbaka|kontakta|höra av|återkomma|följ upp/i,
+    nextStep: 'Uppföljning'
+  },
+  {
+    pattern: /prata med (chef|ledning|kollega)|diskutera internt/i,
+    nextStep: 'Vänta på internt beslut'
+  }
+];
+
 export function extractAnalysisFromTranscript(
   transcript: string,
   existingAnalysis: Partial<CallAnalysis> = {}
@@ -201,16 +251,47 @@ export function extractAnalysisFromTranscript(
     }
   }
 
-  // Adjust probability based on interest and objections
-  if (updates.interestLevel || objections.size > 0) {
-    let probability = existingAnalysis.probability || 50;
-
-    if (updates.interestLevel === 'Hög') probability += 20;
-    if (updates.interestLevel === 'Låg') probability -= 20;
-    if (objections.size > 0) probability -= objections.size * 5;
-
-    updates.probability = Math.max(0, Math.min(100, probability));
+  // Detect call outcome
+  if (!existingAnalysis.callOutcome) {
+    for (const { pattern, outcome } of CALL_OUTCOME_PATTERNS) {
+      if (pattern.test(lowerText)) {
+        updates.callOutcome = outcome;
+        break;
+      }
+    }
   }
+
+  // Detect next steps
+  if (!existingAnalysis.nextSteps) {
+    const detectedSteps: string[] = [];
+    for (const { pattern, nextStep } of NEXT_STEPS_PATTERNS) {
+      if (pattern.test(lowerText)) {
+        detectedSteps.push(nextStep);
+      }
+    }
+    if (detectedSteps.length > 0) {
+      updates.nextSteps = detectedSteps.join(', ');
+    }
+  }
+
+  // Adjust probability based on interest, objections, and outcomes
+  let probability = existingAnalysis.probability || 50;
+
+  // Interest level adjustments
+  if (updates.interestLevel === 'Hög') probability += 20;
+  if (updates.interestLevel === 'Låg') probability -= 20;
+
+  // Objections reduce probability
+  if (objections.size > 0) probability -= objections.size * 5;
+
+  // Outcome-based probability boosts
+  if (updates.callOutcome === 'Bokat möte') probability = Math.max(probability, 75);
+  if (updates.callOutcome === 'Skickat offert') probability = Math.max(probability, 65);
+  if (updates.callOutcome === 'Avslutad affär') probability = 100;
+  if (updates.callOutcome === 'Nej tack') probability = 0;
+  if (updates.callOutcome === 'Behöver tänka') probability = Math.min(probability, 50);
+
+  updates.probability = Math.max(0, Math.min(100, probability));
 
   return updates;
 }
