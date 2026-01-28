@@ -91,50 +91,50 @@ const TIMEFRAME_PATTERNS = [
 
 const CALL_OUTCOME_PATTERNS = [
   {
-    pattern: /boka(t|r|de)? (möte|demo|träff)|visa.*demo|möte nästa|träffa(s|ts)?|kommer på besök/i,
+    pattern: /boka(t|r|de)?.*?(möte|demo|träff)|visa.*?demo|möte.*?nästa|träffa(s|ts)?|kommer.*?besök/i,
     outcome: 'Bokat möte' as const
   },
   {
-    pattern: /skicka(r| över)? (offert|anbud|prislista)|ge er ett pris|offertera/i,
+    pattern: /skicka.*?(offert|anbud|prislista)|ge.*?pris|offerera|offertera/i,
     outcome: 'Skickat offert' as const
   },
   {
-    pattern: /tänka på det|fundera|diskutera internt|prata med|kollegor|ledning|återkomma/i,
+    pattern: /tänka.*?på.*?det|fundera|diskuter.*?internt|prata.*?(med|kollegor|ledning)|återkomma/i,
     outcome: 'Behöver tänka' as const
   },
   {
-    pattern: /nej tack|inte intresserad|passar inte|inte för oss|avböja/i,
+    pattern: /nej.*?tack|inte.*?intresserad|passar.*?inte|inte.*?för.*?oss|avböja/i,
     outcome: 'Nej tack' as const
   },
   {
-    pattern: /kontakta|höra av|ring(a|er)? (upp|tillbaka)|följ(a|er)? upp|återkoppla/i,
+    pattern: /kontakta|höra.*?av|ring.*?(upp|tillbaka)|följ.*?upp|återkoppla/i,
     outcome: 'Uppföljning krävs' as const
   },
   {
-    pattern: /signera(t|r)?|skriv(a|er)? på|avtal(et)?|affär(en)?.*klar|deal|köper/i,
+    pattern: /signera(t|r)?|skriv.*?på|avtal(et)?|affär.*?klar|deal|köper/i,
     outcome: 'Avslutad affär' as const
   }
 ];
 
 const NEXT_STEPS_PATTERNS = [
   {
-    pattern: /boka(t|r)? demo|visa demo|demonstrera|möte nästa (vecka|månad)/i,
+    pattern: /boka(t|r)?.*?(demo|möte)|visa.*?demo|demonstrera|möte.*?nästa\s+(vecka|månad)/i,
     nextStep: 'Boka demo/möte'
   },
   {
-    pattern: /skicka offert|ge pris|offertera|anbud/i,
+    pattern: /skicka.*?(offert|anbud|prislista)|ge.*?pris|offerera|offertera/i,
     nextStep: 'Skicka offert'
   },
   {
-    pattern: /skicka (mer )?information|mejla|mail|dokumentation/i,
+    pattern: /skicka.*?(information|dokument)|mejla|maila|mail/i,
     nextStep: 'Skicka information'
   },
   {
-    pattern: /ring tillbaka|kontakta|höra av|återkomma|följ upp/i,
+    pattern: /ring.*?tillbaka|kontakta|höra.*?av|återkomma|följ.*?upp/i,
     nextStep: 'Uppföljning'
   },
   {
-    pattern: /prata med (chef|ledning|kollega)|diskutera internt/i,
+    pattern: /prata.*?(chef|ledning|kollega)|diskuter.*?internt/i,
     nextStep: 'Vänta på internt beslut'
   }
 ];
