@@ -261,17 +261,21 @@ export function extractAnalysisFromTranscript(
     }
   }
 
-  // Detect next steps
-  if (!existingAnalysis.nextSteps) {
-    const detectedSteps: string[] = [];
-    for (const { pattern, nextStep } of NEXT_STEPS_PATTERNS) {
-      if (pattern.test(lowerText)) {
-        detectedSteps.push(nextStep);
-      }
+  // Detect next steps - always check for new steps and merge with existing
+  const detectedSteps: string[] = [];
+  for (const { pattern, nextStep } of NEXT_STEPS_PATTERNS) {
+    if (pattern.test(lowerText)) {
+      detectedSteps.push(nextStep);
     }
-    if (detectedSteps.length > 0) {
-      updates.nextSteps = detectedSteps.join(', ');
-    }
+  }
+
+  if (detectedSteps.length > 0) {
+    // Merge with existing steps, avoiding duplicates
+    const existingSteps = existingAnalysis.nextSteps
+      ? existingAnalysis.nextSteps.split(', ').map(s => s.trim())
+      : [];
+    const allSteps = [...new Set([...existingSteps, ...detectedSteps])];
+    updates.nextSteps = allSteps.join(', ');
   }
 
   // Adjust probability based on interest, objections, and outcomes
