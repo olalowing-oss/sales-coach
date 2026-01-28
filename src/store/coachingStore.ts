@@ -89,13 +89,17 @@ export const useCoachingStore = create<CoachingDataState>()(
             loadCaseStudiesFromDb()
           ]);
 
-          // Check if database is empty
-          const dbIsEmpty = !triggers && !battlecards && !objections && !cases;
+          // Check if database has any data for this user
+          const hasDbData =
+            (triggers && Object.keys(triggers).length > 0) ||
+            (battlecards && battlecards.length > 0) ||
+            (objections && objections.length > 0) ||
+            (cases && cases.length > 0);
 
-          if (dbIsEmpty) {
-            // Database is empty - sync current store data to database
+          if (!hasDbData) {
+            // Database is empty for this user - sync current store data to database
             const state = get();
-            console.log('📤 Databasen är tom - synkar localStorage-data till databas...');
+            console.log('📤 Databasen är tom för denna användare - synkar default-data till databas...');
 
             await Promise.all([
               syncTriggerPatternsToDb(state.triggerPatterns),
@@ -104,15 +108,15 @@ export const useCoachingStore = create<CoachingDataState>()(
               syncCaseStudiesToDb(state.caseStudies)
             ]);
 
-            console.log('✅ Initial data synkad till databas');
+            console.log('✅ Default coaching-data synkad till databas');
           } else {
             // Database has data - load it into the store
             const updates: Partial<CoachingDataState> = {};
 
-            if (triggers) updates.triggerPatterns = triggers;
-            if (battlecards) updates.battlecards = battlecards;
-            if (objections) updates.objectionHandlers = objections;
-            if (cases) updates.caseStudies = cases;
+            if (triggers && Object.keys(triggers).length > 0) updates.triggerPatterns = triggers;
+            if (battlecards && battlecards.length > 0) updates.battlecards = battlecards;
+            if (objections && objections.length > 0) updates.objectionHandlers = objections;
+            if (cases && cases.length > 0) updates.caseStudies = cases;
 
             if (Object.keys(updates).length > 0) {
               set(updates);
