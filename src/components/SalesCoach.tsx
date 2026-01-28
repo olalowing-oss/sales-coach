@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect } from 'react';
-import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User } from 'lucide-react';
+import React, { useCallback, useEffect, useRef } from 'react';
+import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User, Upload } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
 import { TranscriptPanel } from './TranscriptPanel';
 import { CoachingPanel } from './CoachingPanel';
 import { AdminPanel } from './AdminPanel';
@@ -43,6 +44,7 @@ export const SalesCoach: React.FC = () => {
   const [showCoachingAdmin, setShowCoachingAdmin] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Läs demo-läge från localStorage för att överleva page reload
   const [forceDemoMode] = React.useState(() => {
@@ -76,6 +78,20 @@ export const SalesCoach: React.FC = () => {
 
   const { isListening, startListening, stopListening, error: speechError } = speechRecognition;
 
+  // Audio file transcription hook
+  const { transcribeFile, isProcessing, progress } = useAudioFileTranscription({
+    subscriptionKey: SPEECH_CONFIG.subscriptionKey,
+    region: SPEECH_CONFIG.region,
+    language: SPEECH_CONFIG.language,
+    onInterimResult: addInterimTranscript,
+    onFinalResult: addFinalTranscript,
+    onError: (error: string) => console.error('Transcription error:', error),
+    onComplete: () => {
+      stopSession();
+      console.log('File transcription complete');
+    }
+  });
+
   // Hantera start av session och inspelning
   const handleStart = useCallback(async () => {
     startSession();
@@ -87,6 +103,27 @@ export const SalesCoach: React.FC = () => {
     stopListening();
     stopSession();
   }, [stopListening, stopSession]);
+
+  // Hantera fil-uppladdning
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validera filtyp
+    if (!file.name.endsWith('.wav') && !file.type.includes('audio')) {
+      alert('Vänligen välj en WAV-fil');
+      return;
+    }
+
+    // Starta session och transkribera fil
+    startSession();
+    await transcribeFile(file);
+
+    // Rensa file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [startSession, transcribeFile]);
 
   // Hantera paus/resume
   const handlePauseResume = useCallback(async () => {
@@ -264,14 +301,54 @@ export const SalesCoach: React.FC = () => {
         {/* Control bar */}
         <div className="bg-gray-800 rounded-xl p-4 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {!isActive ? (
-              <button
-                onClick={handleStart}
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
-              >
-                <Mic className="w-5 h-5" />
-                Starta samtal
-              </button>
+            {!isActive && !isProcessing ? (
+              <>
+                <button
+                  onClick={handleStart}
+                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
+                  title="Starta live-inspelning från mikrofon"
+                >
+                  <Mic className="w-5 h-5" />
+                  Starta samtal
+                </button>
+
+                {!useMock && (
+                  <>
+                    <div className="w-px h-8 bg-gray-700" />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+                      title="Ladda upp ljudfil för transkribering"
+                    >
+                      <Upload className="w-5 h-5" />
+                      Ladda upp fil
+                    </button>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".wav,audio/wav,audio/wave"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </>
+                )}
+              </>
+            ) : isProcessing ? (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 px-6 py-3 bg-blue-600/20 text-blue-400 rounded-lg">
+                  <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                  Transkriberar fil...
+                </div>
+                <div className="flex-1 max-w-xs">
+                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-600 transition-all duration-300"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
+                </div>
+              </div>
             ) : (
               <>
                 <button
