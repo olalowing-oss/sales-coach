@@ -67,27 +67,29 @@ export const useSessionStore = create<SessionState>((set, get) => ({
   startSession: (customer?: CustomerInfo) => {
     const sessionId = uuidv4();
     const now = new Date();
-    
-    set({
-      session: {
-        id: sessionId,
-        status: 'recording',
-        startedAt: now,
-        customer,
-        transcript: {
-          segments: [],
-          fullText: '',
-          duration: 0
-        },
-        coachingTips: [],
-        analytics: {
-          totalDuration: 0,
-          talkRatio: { seller: 50, customer: 50 },
-          topicsDiscussed: [],
-          objectionsHandled: [],
-          offersPresented: []
-        }
+
+    const newSession: CallSession = {
+      id: sessionId,
+      status: 'recording',
+      startedAt: now,
+      customer,
+      transcript: {
+        segments: [],
+        fullText: '',
+        duration: 0
       },
+      coachingTips: [],
+      analytics: {
+        totalDuration: 0,
+        talkRatio: { seller: 50, customer: 50 },
+        topicsDiscussed: [],
+        objectionsHandled: [],
+        offersPresented: []
+      }
+    };
+
+    set({
+      session: newSession,
       status: 'recording',
       segments: [],
       interimText: '',
@@ -95,6 +97,11 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       dismissedTipIds: [],
       conversationContext: []
     });
+
+    // Spara sessionen till databasen direkt så att RLS fungerar för segments
+    saveSessionToDb(newSession).catch(err =>
+      console.error('Failed to save initial session to DB:', err)
+    );
   },
 
   stopSession: () => {
