@@ -15,13 +15,6 @@ export const LiveCallAnalysisPanel: React.FC<LiveCallAnalysisPanelProps> = ({
     onUpdate({ ...analysis, [field]: value });
   };
 
-  const addToList = (field: 'productsDiscussed' | 'competitorsMentioned' | 'objectionsRaised' | 'painPoints', value: string) => {
-    const currentList = analysis[field] || [];
-    if (!currentList.includes(value)) {
-      updateField(field, [...currentList, value]);
-    }
-  };
-
   return (
     <div className="bg-gray-800 rounded-lg border border-gray-700 p-4 space-y-4">
       <div className="flex items-center gap-2 mb-3">
