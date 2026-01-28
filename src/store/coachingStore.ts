@@ -64,6 +64,23 @@ export const useCoachingStore = create<CoachingDataState>()(
 
       // === INITIALIZE FROM DATABASE ===
       initializeFromDb: async () => {
+        // ALWAYS ensure we have default data first
+        const currentState = get();
+        const hasLocalData = Object.keys(currentState.triggerPatterns).length > 0 ||
+                            currentState.battlecards.length > 0 ||
+                            currentState.objectionHandlers.length > 0 ||
+                            currentState.caseStudies.length > 0;
+
+        if (!hasLocalData) {
+          console.log('📦 Store är tomt, laddar defaults...');
+          set({
+            triggerPatterns: DEFAULT_TRIGGERS,
+            battlecards: DEFAULT_BATTLECARDS,
+            objectionHandlers: DEFAULT_OBJECTIONS,
+            caseStudies: DEFAULT_CASES
+          });
+        }
+
         try {
           const [triggers, battlecards, objections, cases] = await Promise.all([
             loadTriggerPatternsFromDb(),
@@ -76,7 +93,7 @@ export const useCoachingStore = create<CoachingDataState>()(
           const dbIsEmpty = !triggers && !battlecards && !objections && !cases;
 
           if (dbIsEmpty) {
-            // Database is empty - sync current localStorage data to database
+            // Database is empty - sync current store data to database
             const state = get();
             console.log('📤 Databasen är tom - synkar localStorage-data till databas...');
 

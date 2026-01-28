@@ -22,6 +22,18 @@ export const SupabaseProvider: React.FC<SupabaseProviderProps> = ({ children }) 
         console.log('✅ Data laddad från databasen');
       } else {
         console.log('ℹ️ Supabase inte konfigurerad - data sparas endast lokalt');
+
+        // Ensure default data exists when not using Supabase
+        const state = useCoachingStore.getState();
+        const hasData = Object.keys(state.triggerPatterns).length > 0 ||
+                        state.battlecards.length > 0 ||
+                        state.objectionHandlers.length > 0 ||
+                        state.caseStudies.length > 0;
+
+        if (!hasData) {
+          console.log('📦 Laddar default coaching-data...');
+          state.resetToDefaults();
+        }
       }
 
       setIsInitialized(true);
