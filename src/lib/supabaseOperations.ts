@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured, signInAnonymously } from './supabase';
+import { supabase, isSupabaseConfigured } from './supabase';
 import type { CallSession, TranscriptSegment, CoachingTip } from '../types';
 import type { Database } from '../types/database';
 
@@ -15,10 +15,17 @@ export async function saveSessionToDb(session: CallSession): Promise<string | nu
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const sessionData: DbSessionInsert = {
       id: session.id,
+      user_id: user.id,
       status: session.status,
       started_at: session.startedAt.toISOString(),
       ended_at: session.endedAt?.toISOString() || null,
@@ -123,7 +130,7 @@ export async function loadSessionsFromDb(limit = 50): Promise<DbSession[]> {
   if (!isSupabaseConfigured()) return [];
 
   try {
-    await signInAnonymously();
+    // User is already authenticated via AuthContext
 
     const { data, error } = await supabase
       .from('call_sessions')
@@ -201,11 +208,17 @@ export async function loadTriggerPatternsFromDb() {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('trigger_patterns')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error loading triggers:', error);
@@ -233,14 +246,20 @@ export async function syncTriggerPatternsToDb(patterns: Record<string, any>) {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
 
-    // Delete existing
-    await supabase.from('trigger_patterns').delete().neq('id', '');
+    // Delete existing user's patterns
+    await supabase.from('trigger_patterns').delete().eq('user_id', user.id);
 
     // Insert new
     const insertData = Object.entries(patterns).map(([id, pattern]) => ({
       id,
+      user_id: user.id,
       keywords: pattern.keywords,
       response_type: pattern.response,
       category: pattern.category || null
@@ -270,11 +289,17 @@ export async function loadBattlecardsFromDb() {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('battlecards')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error loading battlecards:', error);
@@ -300,14 +325,20 @@ export async function syncBattlecardsToDb(battlecards: any[]) {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
 
-    // Delete existing
-    await supabase.from('battlecards').delete().neq('id', '');
+    // Delete existing user's battlecards
+    await supabase.from('battlecards').delete().eq('user_id', user.id);
 
     // Insert new
     const insertData = battlecards.map(bc => ({
       id: bc.id,
+      user_id: user.id,
       competitor: bc.competitor,
       their_strengths: bc.theirStrengths,
       their_weaknesses: bc.theirWeaknesses,
@@ -340,11 +371,17 @@ export async function loadObjectionHandlersFromDb() {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('objection_handlers')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error loading objections:', error);
@@ -372,14 +409,20 @@ export async function syncObjectionHandlersToDb(handlers: any[]) {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
 
-    // Delete existing
-    await supabase.from('objection_handlers').delete().neq('id', '');
+    // Delete existing user's objection handlers
+    await supabase.from('objection_handlers').delete().eq('user_id', user.id);
 
     // Insert new
     const insertData = handlers.map(oh => ({
       id: oh.id,
+      user_id: user.id,
       objection: oh.objection,
       triggers: oh.triggers,
       category: oh.category,
@@ -412,11 +455,17 @@ export async function loadCaseStudiesFromDb() {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('case_studies')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error loading cases:', error);
@@ -443,14 +492,20 @@ export async function syncCaseStudiesToDb(cases: any[]) {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
 
-    // Delete existing
-    await supabase.from('case_studies').delete().neq('id', '');
+    // Delete existing user's case studies
+    await supabase.from('case_studies').delete().eq('user_id', user.id);
 
     // Insert new
     const insertData = cases.map(cs => ({
       id: cs.id,
+      user_id: user.id,
       customer: cs.customer,
       industry: cs.industry,
       challenge: cs.challenge,
@@ -484,11 +539,17 @@ export async function loadOffersFromDb() {
   if (!isSupabaseConfigured()) return null;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
 
     const { data, error } = await supabase
       .from('offers')
-      .select('*');
+      .select('*')
+      .eq('user_id', user.id);
 
     if (error) {
       console.error('Error loading offers:', error);
@@ -520,14 +581,20 @@ export async function syncOffersToDb(offers: any[]) {
   if (!isSupabaseConfigured()) return false;
 
   try {
-    await signInAnonymously();
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
 
-    // Delete existing
-    await supabase.from('offers').delete().neq('id', '');
+    // Delete existing user's offers
+    await supabase.from('offers').delete().eq('user_id', user.id);
 
     // Insert new
     const insertData = offers.map(offer => ({
       id: offer.id,
+      user_id: user.id,
       name: offer.name,
       short_description: offer.shortDescription,
       full_description: offer.fullDescription,
