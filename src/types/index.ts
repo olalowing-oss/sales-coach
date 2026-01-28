@@ -153,6 +153,42 @@ export interface CallAnalytics {
   nextSteps?: string;
 }
 
+// === CALL ANALYSIS ===
+export interface CallAnalysis {
+  // Basic information
+  industry?: string;
+  companySize?: '1-50' | '51-200' | '201-1000' | '1000+';
+
+  // Call context
+  callPurpose?: 'Prospektering' | 'Demo' | 'Uppföljning' | 'Förhandling' | 'Closing';
+  callOutcome?: 'Bokat möte' | 'Skickat offert' | 'Behöver tänka' | 'Nej tack' | 'Uppföljning krävs' | 'Avslutad affär';
+  interestLevel?: 'Hög' | 'Medel' | 'Låg';
+
+  // Business data
+  estimatedValue?: number;
+  decisionTimeframe?: 'Omedelbart' | '1-3 månader' | '3-6 månader' | '6-12 månader' | 'Okänt';
+  probability?: number;
+
+  // Structured lists
+  productsDiscussed?: string[];
+  competitorsMentioned?: string[];
+  objectionsRaised?: string[];
+  painPoints?: string[];
+
+  // Follow-up
+  nextSteps?: string;
+  followUpDate?: Date;
+  notes?: string;
+
+  // AI-generated
+  aiSummary?: string;
+  keyTopics?: string[];
+
+  // Metadata
+  analyzedAt?: Date;
+  isAnalyzed: boolean;
+}
+
 // === SPEECH SERVICE ===
 export interface SpeechConfig {
   subscriptionKey: string;

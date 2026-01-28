@@ -200,6 +200,51 @@ export async function deleteSessionFromDb(sessionId: string): Promise<boolean> {
   }
 }
 
+export async function saveSessionAnalysisToDb(
+  sessionId: string,
+  analysis: any
+): Promise<boolean> {
+  if (!isSupabaseConfigured()) return false;
+
+  try {
+    const { error } = await supabase
+      .from('call_sessions')
+      .update({
+        industry: analysis.industry || null,
+        company_size: analysis.companySize || null,
+        call_purpose: analysis.callPurpose || null,
+        call_outcome: analysis.callOutcome || null,
+        interest_level: analysis.interestLevel || null,
+        estimated_value: analysis.estimatedValue || null,
+        decision_timeframe: analysis.decisionTimeframe || null,
+        probability: analysis.probability || null,
+        products_discussed: analysis.productsDiscussed || null,
+        competitors_mentioned: analysis.competitorsMentioned || null,
+        objections_raised: analysis.objectionsRaised || null,
+        pain_points: analysis.painPoints || null,
+        next_steps: analysis.nextSteps || null,
+        follow_up_date: analysis.followUpDate ? new Date(analysis.followUpDate).toISOString() : null,
+        notes: analysis.notes || null,
+        ai_summary: analysis.aiSummary || null,
+        key_topics: analysis.keyTopics || null,
+        analyzed_at: new Date().toISOString(),
+        is_analyzed: true,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', sessionId);
+
+    if (error) {
+      console.error('Error saving analysis:', error);
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in saveSessionAnalysisToDb:', error);
+    return false;
+  }
+}
+
 // ============================================
 // COACHING DATA OPERATIONS
 // ============================================

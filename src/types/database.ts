@@ -23,6 +23,26 @@ export interface Database {
           duration_seconds: number | null
           sentiment: 'positive' | 'neutral' | 'negative' | null
           topics: string[] | null
+          // Analysis fields
+          industry: string | null
+          company_size: '1-50' | '51-200' | '201-1000' | '1000+' | null
+          call_purpose: 'Prospektering' | 'Demo' | 'Uppföljning' | 'Förhandling' | 'Closing' | null
+          call_outcome: 'Bokat möte' | 'Skickat offert' | 'Behöver tänka' | 'Nej tack' | 'Uppföljning krävs' | 'Avslutad affär' | null
+          interest_level: 'Hög' | 'Medel' | 'Låg' | null
+          estimated_value: number | null
+          decision_timeframe: 'Omedelbart' | '1-3 månader' | '3-6 månader' | '6-12 månader' | 'Okänt' | null
+          probability: number | null
+          products_discussed: string[] | null
+          competitors_mentioned: string[] | null
+          objections_raised: string[] | null
+          pain_points: string[] | null
+          next_steps: string | null
+          follow_up_date: string | null
+          notes: string | null
+          ai_summary: string | null
+          key_topics: string[] | null
+          analyzed_at: string | null
+          is_analyzed: boolean | null
           created_at: string
           updated_at: string
         }
@@ -39,6 +59,26 @@ export interface Database {
           duration_seconds?: number | null
           sentiment?: 'positive' | 'neutral' | 'negative' | null
           topics?: string[] | null
+          // Analysis fields
+          industry?: string | null
+          company_size?: '1-50' | '51-200' | '201-1000' | '1000+' | null
+          call_purpose?: 'Prospektering' | 'Demo' | 'Uppföljning' | 'Förhandling' | 'Closing' | null
+          call_outcome?: 'Bokat möte' | 'Skickat offert' | 'Behöver tänka' | 'Nej tack' | 'Uppföljning krävs' | 'Avslutad affär' | null
+          interest_level?: 'Hög' | 'Medel' | 'Låg' | null
+          estimated_value?: number | null
+          decision_timeframe?: 'Omedelbart' | '1-3 månader' | '3-6 månader' | '6-12 månader' | 'Okänt' | null
+          probability?: number | null
+          products_discussed?: string[] | null
+          competitors_mentioned?: string[] | null
+          objections_raised?: string[] | null
+          pain_points?: string[] | null
+          next_steps?: string | null
+          follow_up_date?: string | null
+          notes?: string | null
+          ai_summary?: string | null
+          key_topics?: string[] | null
+          analyzed_at?: string | null
+          is_analyzed?: boolean | null
           created_at?: string
           updated_at?: string
         }
@@ -55,6 +95,26 @@ export interface Database {
           duration_seconds?: number | null
           sentiment?: 'positive' | 'neutral' | 'negative' | null
           topics?: string[] | null
+          // Analysis fields
+          industry?: string | null
+          company_size?: '1-50' | '51-200' | '201-1000' | '1000+' | null
+          call_purpose?: 'Prospektering' | 'Demo' | 'Uppföljning' | 'Förhandling' | 'Closing' | null
+          call_outcome?: 'Bokat möte' | 'Skickat offert' | 'Behöver tänka' | 'Nej tack' | 'Uppföljning krävs' | 'Avslutad affär' | null
+          interest_level?: 'Hög' | 'Medel' | 'Låg' | null
+          estimated_value?: number | null
+          decision_timeframe?: 'Omedelbart' | '1-3 månader' | '3-6 månader' | '6-12 månader' | 'Okänt' | null
+          probability?: number | null
+          products_discussed?: string[] | null
+          competitors_mentioned?: string[] | null
+          objections_raised?: string[] | null
+          pain_points?: string[] | null
+          next_steps?: string | null
+          follow_up_date?: string | null
+          notes?: string | null
+          ai_summary?: string | null
+          key_topics?: string[] | null
+          analyzed_at?: string | null
+          is_analyzed?: boolean | null
           created_at?: string
           updated_at?: string
         }

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, Clock, TrendingUp, TrendingDown, Minus, Trash2, Eye } from 'lucide-react';
-import { loadSessionsFromDb, deleteSessionFromDb } from '../lib/supabaseOperations';
+import { X, Calendar, Clock, TrendingUp, TrendingDown, Minus, Trash2, Eye, Sparkles, CheckCircle } from 'lucide-react';
+import { loadSessionsFromDb, deleteSessionFromDb, saveSessionAnalysisToDb } from '../lib/supabaseOperations';
+import { CallAnalysisModal } from './CallAnalysisModal';
 import type { Database } from '../types/database';
+import type { CallAnalysis } from '../types';
 
 type DbSession = Database['public']['Tables']['call_sessions']['Row'];
 
@@ -14,6 +16,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
   const [loading, setLoading] = useState(true);
   const [selectedSession, setSelectedSession] = useState<DbSession | null>(null);
   const [viewingTranscript, setViewingTranscript] = useState<string | null>(null);
+  const [analyzingSession, setAnalyzingSession] = useState<DbSession | null>(null);
 
   useEffect(() => {
     loadSessions();
@@ -40,8 +43,23 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
 
   const handleViewTranscript = async (session: DbSession) => {
     setViewingTranscript(session.id);
-    // Could load segments here if needed
-    // const segments = await loadSessionSegments(session.id);
+  };
+
+  const handleAnalyze = (session: DbSession) => {
+    setAnalyzingSession(session);
+  };
+
+  const handleSaveAnalysis = async (analysis: CallAnalysis) => {
+    if (!analyzingSession) return;
+
+    const success = await saveSessionAnalysisToDb(analyzingSession.id, analysis);
+    if (success) {
+      // Reload sessions to get updated data
+      await loadSessions();
+      setAnalyzingSession(null);
+    } else {
+      throw new Error('Failed to save analysis');
+    }
   };
 
   const formatDuration = (seconds: number) => {
@@ -70,6 +88,32 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
       default:
         return <Minus className="w-4 h-4 text-gray-400" />;
     }
+  };
+
+  const getExistingAnalysis = (session: DbSession): Partial<CallAnalysis> | undefined => {
+    if (!session.is_analyzed) return undefined;
+
+    return {
+      industry: session.industry || undefined,
+      companySize: session.company_size || undefined,
+      callPurpose: session.call_purpose || undefined,
+      callOutcome: session.call_outcome || undefined,
+      interestLevel: session.interest_level || undefined,
+      estimatedValue: session.estimated_value || undefined,
+      decisionTimeframe: session.decision_timeframe || undefined,
+      probability: session.probability || undefined,
+      productsDiscussed: session.products_discussed || undefined,
+      competitorsMentioned: session.competitors_mentioned || undefined,
+      objectionsRaised: session.objections_raised || undefined,
+      painPoints: session.pain_points || undefined,
+      nextSteps: session.next_steps || undefined,
+      followUpDate: session.follow_up_date ? new Date(session.follow_up_date) : undefined,
+      notes: session.notes || undefined,
+      aiSummary: session.ai_summary || undefined,
+      keyTopics: session.key_topics || undefined,
+      analyzedAt: session.analyzed_at ? new Date(session.analyzed_at) : undefined,
+      isAnalyzed: session.is_analyzed || false
+    };
   };
 
   return (
@@ -116,9 +160,16 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                     <div className="mb-3">
                       {session.customer_name ? (
                         <>
-                          <h3 className="text-lg font-semibold text-white">
-                            {session.customer_name}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-lg font-semibold text-white">
+                              {session.customer_name}
+                            </h3>
+                            {session.is_analyzed && (
+                              <span title="Analyserad">
+                                <CheckCircle className="w-5 h-5 text-green-500" />
+                              </span>
+                            )}
+                          </div>
                           {session.customer_company && (
                             <p className="text-sm text-gray-400">{session.customer_company}</p>
                           )}
@@ -127,7 +178,14 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                           )}
                         </>
                       ) : (
-                        <h3 className="text-lg font-semibold text-white">Unnamed Call</h3>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-white">Unnamed Call</h3>
+                          {session.is_analyzed && (
+                            <span title="Analyserad">
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            </span>
+                          )}
+                        </div>
                       )}
                     </div>
 
@@ -163,6 +221,58 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                       </div>
                     </div>
 
+                    {/* Analysis summary (if analyzed) */}
+                    {session.is_analyzed && (
+                      <div className="mt-4 p-4 bg-gray-900/50 rounded-lg space-y-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          {session.call_purpose && (
+                            <div>
+                              <span className="text-gray-500">Syfte:</span>
+                              <span className="text-white ml-2">{session.call_purpose}</span>
+                            </div>
+                          )}
+                          {session.call_outcome && (
+                            <div>
+                              <span className="text-gray-500">Resultat:</span>
+                              <span className="text-white ml-2">{session.call_outcome}</span>
+                            </div>
+                          )}
+                          {session.interest_level && (
+                            <div>
+                              <span className="text-gray-500">Intresse:</span>
+                              <span className={`ml-2 ${
+                                session.interest_level === 'Hög' ? 'text-green-400' :
+                                session.interest_level === 'Medel' ? 'text-yellow-400' :
+                                'text-red-400'
+                              }`}>
+                                {session.interest_level}
+                              </span>
+                            </div>
+                          )}
+                          {session.estimated_value && (
+                            <div>
+                              <span className="text-gray-500">Värde:</span>
+                              <span className="text-white ml-2">{session.estimated_value.toLocaleString('sv-SE')} SEK</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {session.next_steps && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Nästa steg:</span>
+                            <p className="text-gray-300 mt-1">{session.next_steps}</p>
+                          </div>
+                        )}
+
+                        {session.follow_up_date && (
+                          <div className="text-sm">
+                            <span className="text-gray-500">Uppföljning:</span>
+                            <span className="text-white ml-2">{formatDate(session.follow_up_date)}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Topics */}
                     {session.topics && session.topics.length > 0 && (
                       <div className="mt-3 flex flex-wrap gap-2">
@@ -178,7 +288,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                     )}
 
                     {/* Transcript preview */}
-                    {session.full_transcript && (
+                    {session.full_transcript && !session.is_analyzed && (
                       <div className="mt-3 p-3 bg-gray-900/50 rounded text-sm text-gray-400 line-clamp-2">
                         {session.full_transcript}
                       </div>
@@ -186,7 +296,20 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-2 ml-4">
+                  <div className="flex flex-col gap-2 ml-4">
+                    <button
+                      onClick={() => handleAnalyze(session)}
+                      className={`p-2 ${
+                        session.is_analyzed
+                          ? 'bg-green-600 hover:bg-green-700'
+                          : 'bg-purple-600 hover:bg-purple-700'
+                      } text-white rounded-lg flex items-center gap-2`}
+                      title={session.is_analyzed ? 'Visa/redigera analys' : 'Analysera samtal'}
+                    >
+                      <Sparkles size={18} />
+                      {session.is_analyzed && <span className="text-xs">Visa</span>}
+                    </button>
+
                     {session.full_transcript && (
                       <button
                         onClick={() => handleViewTranscript(session)}
@@ -232,6 +355,19 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Analysis modal */}
+      {analyzingSession && (
+        <CallAnalysisModal
+          sessionId={analyzingSession.id}
+          customerName={analyzingSession.customer_name || undefined}
+          customerCompany={analyzingSession.customer_company || undefined}
+          transcript={analyzingSession.full_transcript || ''}
+          existingAnalysis={getExistingAnalysis(analyzingSession)}
+          onSave={handleSaveAnalysis}
+          onClose={() => setAnalyzingSession(null)}
+        />
       )}
     </div>
   );
