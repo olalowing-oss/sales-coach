@@ -62,9 +62,11 @@ VITE_AZURE_SPEECH_REGION=swedencentral
 
 ### 4. Konfigurera Supabase
 
-Kör SQL-skript i Supabase SQL Editor:
-1. Skapa tabeller (se `supabase/schema.sql`)
-2. Aktivera RLS policies
+Se detaljerad guide i [docs/SETUP.md](docs/SETUP.md)
+
+Snabbversion:
+1. Skapa Supabase-projekt
+2. Kör SQL-schema från `supabase/schema.sql`
 3. Aktivera Email auth
 
 ### 5. Starta utvecklingsservern
@@ -170,11 +172,13 @@ b3-sales-coach/
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
+├── docs/                       # Dokumentation
+│   ├── ARCHITECTURE.md            # Fullständig arkitektur
+│   └── SETUP.md                   # Steg-för-steg setup
 ├── supabase/
 │   └── schema.sql                 # Databas-schema
-├── ARCHITECTURE.md                # Fullständig arkitektur-dokumentation
 ├── package.json
-└── README.md
+└── README.md                      # Denna fil
 ```
 
 ## 🎯 Användning
@@ -266,8 +270,9 @@ b3-sales-coach/
 
 ## 📖 Dokumentation
 
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Fullständig arkitektur-dokumentation
-- **[Supabase Schema](supabase/schema.sql)** - Databas-schema
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Fullständig arkitektur-dokumentation
+- **[docs/SETUP.md](docs/SETUP.md)** - Steg-för-steg setup-guide
+- **[supabase/schema.sql](supabase/schema.sql)** - Databas-schema
 - **README.md** (denna fil) - Snabbstart och översikt
 
 ## 🚀 Deployment
