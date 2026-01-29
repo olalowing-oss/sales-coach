@@ -11,6 +11,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { getAllDemoScripts } from '../data/demoScripts';
 
 // Konfiguration - byt ut mot riktiga nycklar i produktion
 const SPEECH_CONFIG = {
@@ -47,6 +48,9 @@ export const SalesCoach: React.FC = () => {
   const [showCoachingAdmin, setShowCoachingAdmin] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [selectedScript, setSelectedScript] = React.useState(() => {
+    return localStorage.getItem('selectedDemoScript') || 'copilot-success';
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Läs demo-läge från localStorage för att överleva page reload
@@ -76,7 +80,7 @@ export const SalesCoach: React.FC = () => {
   };
 
   const speechRecognition = useMock
-    ? useMockSpeechRecognition(speechHookOptions)
+    ? useMockSpeechRecognition({ ...speechHookOptions, scriptId: selectedScript })
     : useSpeechRecognition(speechHookOptions);
 
   const { isListening, startListening, stopListening, error: speechError } = speechRecognition;
@@ -212,6 +216,26 @@ export const SalesCoach: React.FC = () => {
               >
                 {forceDemoMode ? 'Byt till Azure' : 'Byt till Demo'}
               </button>
+            )}
+
+            {/* Demo Script Selector */}
+            {useMock && (
+              <select
+                value={selectedScript}
+                onChange={(e) => {
+                  setSelectedScript(e.target.value);
+                  localStorage.setItem('selectedDemoScript', e.target.value);
+                }}
+                disabled={isListening}
+                className="px-3 py-1 text-xs bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Välj demo-scenario"
+              >
+                {getAllDemoScripts().map((script) => (
+                  <option key={script.id} value={script.id}>
+                    {script.name}
+                  </option>
+                ))}
+              </select>
             )}
           </div>
 

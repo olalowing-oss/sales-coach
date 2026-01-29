@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
 import * as SpeechSDK from 'microsoft-cognitiveservices-speech-sdk';
+import { getDemoScript } from '../data/demoScripts';
 
 interface UseSpeechRecognitionOptions {
   subscriptionKey: string;
@@ -212,34 +213,17 @@ const calculateConfidence = (result: SpeechSDK.SpeechRecognitionResult): number 
 export const useMockSpeechRecognition = ({
   onInterimResult,
   onFinalResult,
-  onStatusChange
-}: Omit<UseSpeechRecognitionOptions, 'subscriptionKey' | 'region'>): UseSpeechRecognitionReturn => {
+  onStatusChange,
+  scriptId = 'copilot-success'
+}: Omit<UseSpeechRecognitionOptions, 'subscriptionKey' | 'region'> & { scriptId?: string }): UseSpeechRecognitionReturn => {
   const [isListening, setIsListening] = useState(false);
   const [status, setStatus] = useState<'idle' | 'listening' | 'error'>('idle');
   const [interimTranscript, setInterimTranscript] = useState('');
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Simulerade fraser för demo - ett realistiskt säljsamtal
-  const mockPhrases = [
-    "Hej! Ja, jag heter Anna Svensson och jag är IT-chef på Nordiska Byggsystem AB",
-    "Vi är ett medelstort byggföretag med cirka 250 anställda",
-    "Just nu använder vi en blandning av olika verktyg. Teams har vi för möten",
-    "Men vi har också Google Workspace för mail och dokument, vilket är lite rörigt faktiskt",
-    "Det största problemet vi har är att hitta dokument och information. Folk sparar saker överallt",
-    "Vi har också problem med samarbete mellan projekt. Mycket information försvinner mellan teamen",
-    "Vi har tittat på olika lösningar, men Atea visade oss något för ett par månader sen som var för dyrt",
-    "Vårt avtal med Google löper ut om tre månader så vi måste bestämma oss snart",
-    "Berätta mer om Microsoft 365 och vad ni kan erbjuda",
-    "Copilot låter intressant! Kan det hjälpa oss att hitta information snabbare?",
-    "Hur fungerar integrationen mellan Teams och SharePoint?",
-    "Vi har också säkerhetskrav från våra kunder. Uppfyller ni GDPR och ISO-standarder?",
-    "Vad skulle detta kosta för oss? Vi har budget på omkring 500 000 kronor per år",
-    "Det låter faktiskt bättre än vad Atea erbjöd. De kunde inte lösa dokumentproblemet",
-    "Kan ni visa en demo för hela ledningsgruppen nästa vecka? Vi är fem personer",
-    "Perfekt! Vi vill verkligen komma igång så snabbt som möjligt",
-    "Skicka över en offert så diskuterar vi det internt",
-    "Tack så mycket! Det här känns som precis vad vi behöver för att effektivisera vårt arbete"
-  ];
+  // Hämta valt demo-script
+  const selectedScript = getDemoScript(scriptId);
+  const mockPhrases = selectedScript.phrases;
 
   const startListening = useCallback(async () => {
     setIsListening(true);
