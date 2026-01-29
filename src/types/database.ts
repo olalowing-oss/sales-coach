@@ -399,6 +399,81 @@ export interface Database {
         }
         Relationships: []
       }
+      training_scenarios: {
+        Row: {
+          id: string
+          user_id: string | null
+          name: string
+          difficulty: 'easy' | 'medium' | 'hard'
+          description: string
+          persona_name: string
+          persona_role: string
+          company_name: string
+          company_size: string
+          industry: string
+          pain_points: string[]
+          budget: string
+          decision_timeframe: string
+          personality: string
+          objectives: string[]
+          competitors: string[]
+          opening_line: string
+          success_criteria: string[]
+          common_mistakes: string[]
+          is_global: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id?: string | null
+          name: string
+          difficulty: 'easy' | 'medium' | 'hard'
+          description: string
+          persona_name: string
+          persona_role: string
+          company_name: string
+          company_size: string
+          industry: string
+          pain_points: string[]
+          budget: string
+          decision_timeframe: string
+          personality: string
+          objectives: string[]
+          competitors: string[]
+          opening_line: string
+          success_criteria: string[]
+          common_mistakes: string[]
+          is_global?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string | null
+          name?: string
+          difficulty?: 'easy' | 'medium' | 'hard'
+          description?: string
+          persona_name?: string
+          persona_role?: string
+          company_name?: string
+          company_size?: string
+          industry?: string
+          pain_points?: string[]
+          budget?: string
+          decision_timeframe?: string
+          personality?: string
+          objectives?: string[]
+          competitors?: string[]
+          opening_line?: string
+          success_criteria?: string[]
+          common_mistakes?: string[]
+          is_global?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
