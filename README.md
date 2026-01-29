@@ -76,6 +76,13 @@ Snabbversion:
 
 ### 5. Starta utvecklingsservern
 
+**För AI-träningsläge (rekommenderat):**
+```bash
+npm run dev:vercel
+```
+Detta startar Vercel Dev som inkluderar både frontend och Vercel Functions (API-routes).
+
+**Endast frontend (utan träningsläge):**
 ```bash
 npm run dev
 ```
