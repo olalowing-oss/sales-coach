@@ -17,6 +17,7 @@ import {
   saveSessionAnalysisToDb
 } from '../lib/supabaseOperations';
 import { updateAnalysisWithNewText } from '../utils/analysisExtractor';
+import { analyzeTranscriptWithAI, isAIAnalysisAvailable } from '../utils/aiAnalyzer';
 
 interface SessionState {
   // Session state
@@ -202,8 +203,30 @@ export const useSessionStore = create<SessionState>((set, get) => ({
     get().processTranscriptForCoaching(text);
 
     // Uppdatera live-analys baserat på ny text
-    const updatedAnalysis = updateAnalysisWithNewText(liveAnalysis, text);
-    set({ liveAnalysis: updatedAnalysis });
+    // Använd AI om tillgängligt, annars fallback till pattern matching
+    const updatedSegments = get().segments;
+    const fullText = updatedSegments.map(s => s.text).join(' ');
+
+    if (isAIAnalysisAvailable()) {
+      // AI-baserad analys (asynkron) - kör i bakgrunden
+      analyzeTranscriptWithAI(fullText, liveAnalysis)
+        .then(aiAnalysis => {
+          if (Object.keys(aiAnalysis).length > 0) {
+            console.log('🤖 AI Analysis applied:', aiAnalysis);
+            set({ liveAnalysis: { ...get().liveAnalysis, ...aiAnalysis } });
+          }
+        })
+        .catch(error => {
+          console.error('❌ AI analysis failed, using pattern matching:', error);
+          const patternAnalysis = updateAnalysisWithNewText(get().liveAnalysis, text);
+          set({ liveAnalysis: patternAnalysis });
+        });
+    } else {
+      // Fallback: Pattern matching (synkron)
+      console.log('📋 Using pattern matching (AI not configured)');
+      const updatedAnalysis = updateAnalysisWithNewText(liveAnalysis, text);
+      set({ liveAnalysis: updatedAnalysis });
+    }
   },
 
   clearTranscript: () => {

@@ -6,18 +6,19 @@ AI-driven säljcoaching i realtid. Systemet transkriberar säljsamtal, analysera
 
 ### Kärnfunktioner
 - **Realtidstranskribering** - Azure Speech Services för svensk taltranskribering
-- **Live Samtalsanalys** - Automatisk extraktion av affärsdata under samtalets gång
-  - Bransch, företagsstorlek
-  - Produkter diskuterade, konkurrenter nämnda
-  - Invändningar, pain points
-  - Samtalets resultat, nästa steg
-  - Dynamisk sannolikhet
+- **AI-Driven Samtalsanalys** 🤖 - GPT-4o analyserar samtal intelligent
+  - Kontextuell förståelse av kundintentioner och behov
+  - Automatisk extraktion av affärsdata (bransch, storlek, produkter, konkurrenter)
+  - Intelligent bedömning av invändningar, pain points och köpsignaler
+  - AI-genererade sammanfattningar och nästa steg
+  - Dynamisk sannolikhetsberäkning baserad på samtalsanalys
+  - Fallback till pattern matching om AI inte är konfigurerad
 - **Intelligent Coachning** - Kontextuella tips baserade på triggers och patterns
 - **Fil-uppladdning** - Transkribera inspelade WAV-filer med batch-processing
 - **Samtalshistorik** - Spara och analysera tidigare samtal i Supabase
-- **Efteranalys** - Analysera och berika avslutade samtal med strukturerad data
+- **Efteranalys** - Analysera och berika avslutade samtal med AI eller manuellt
 - **Admin-gränssnitt** - Hantera erbjudanden, battlecards, och coaching-regler
-- **Demo-läge** - Fullt fungerande simulering utan Azure-konto
+- **Demo-läge** - Fullt fungerande simulering utan Azure-konto (3 olika scenarios)
 - **Export** - Spara samtalsnoteringar som Markdown
 
 ## 📋 Förutsättningar
@@ -25,6 +26,7 @@ AI-driven säljcoaching i realtid. Systemet transkriberar säljsamtal, analysera
 - Node.js 18+
 - npm eller yarn
 - Supabase-konto (gratis tier fungerar)
+- **OpenAI API-nyckel** (för AI-baserad samtalsanalys, ~$0.01-0.05/samtal)
 - Azure Speech Services-konto (valfritt - demo-läge fungerar utan)
 
 ## 🛠️ Snabbstart
@@ -55,6 +57,9 @@ Redigera `.env`:
 VITE_SUPABASE_URL=https://xxx.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 
+# OpenAI API (rekommenderat för AI-driven analys)
+VITE_OPENAI_API_KEY=sk-your-openai-key
+
 # Azure Speech (valfritt - demo-läge fungerar utan)
 VITE_AZURE_SPEECH_KEY=your-azure-key
 VITE_AZURE_SPEECH_REGION=swedencentral
@@ -80,14 +85,19 @@ npm run dev
 ## 🎮 Demo-läge
 
 Appen körs automatiskt i demo-läge om Azure Speech-nycklar saknas:
-- Realistiskt simulerat säljsamtal med 18 fraser
-- Ord-för-ord transkribering med varierande pauser
+- Realistiskt simulerat säljsamtal med ord-för-ord transkribering
+- **3 olika scenarios att välja mellan:**
+  - 🎯 **Copilot Success Story** - Positiv kund, bokat möte + offert (75% sannolikhet)
+  - ⚡ **Azure Migration Challenge** - Skeptisk kund med många invändningar (30-50% sannolikhet)
+  - 🚀 **Power Platform Quick Win** - Mycket positiv kund, avslutad affär! (100% sannolikhet)
 - Alla analysfunktioner triggas (produkter, konkurrenter, nästa steg, etc.)
+- AI-analys fungerar även i demo-läge (om OpenAI-nyckel finns)
 - Coaching-tips baserat på innehållet
 - Perfekt för demonstration och UI-testning
 
 **Växla mellan Demo och Azure:**
 - Klicka på "Byt till Demo" / "Byt till Azure" knappen i headern
+- Välj scenario med dropdown-menyn (endast i demo-läge)
 
 ## ☁️ Supabase-konfiguration
 
@@ -122,6 +132,29 @@ I Supabase SQL Editor, kör följande:
 
 - RLS är aktiverat per default
 - Policies säkerställer att användare endast ser sin egen data
+
+## 🤖 OpenAI API-konfiguration (Rekommenderat)
+
+### OpenAI API för AI-driven Analys
+
+1. Gå till [OpenAI Platform](https://platform.openai.com/api-keys)
+2. Skapa ett konto och lägg till betalningsmetod
+3. Generera en ny API-nyckel
+4. Kopiera nyckeln till `VITE_OPENAI_API_KEY` i `.env`
+
+**Modell som används:** GPT-4o (senaste, mest kraftfulla modellen)
+
+**Kostnad:**
+- Input: $2.50 per 1M tokens (~$0.01 per samtal)
+- Output: $10.00 per 1M tokens (~$0.03 per samtal)
+- **Total: ~$0.01-0.05 per samtal** (beroende på längd)
+
+**Funktioner:**
+- ✅ Intelligent samtalsanalys i realtid
+- ✅ AI-genererade sammanfattningar
+- ✅ Kontextuell förståelse av kundintentioner
+- ✅ Automatisk "AI Analysera" knapp i analys-modal
+- ⚠️ Fallback till pattern matching om nyckel saknas
 
 ## ☁️ Azure Speech-konfiguration (Valfritt)
 
@@ -229,6 +262,7 @@ b3-sales-coach/
 - **Lucide React** - Ikoner
 
 ### Backend & Services
+- **OpenAI GPT-4o** - AI-driven samtalsanalys och sammanfattningar
 - **Azure Speech Services** - Real-time + batch transcription (svenska)
 - **Supabase** - PostgreSQL databas med RLS
 - **Netlify** - Hosting & CI/CD
@@ -247,8 +281,8 @@ b3-sales-coach/
 - [x] Autentisering
 
 ### Fas 2: AI Enhancement 🚧
+- [x] GPT-4o för AI-driven samtalsanalys och sammanfattningar
 - [ ] Speaker Diarization (säljare vs kund)
-- [ ] GPT-4o för AI-sammanfattningar
 - [ ] Sentiment-analys per segment
 - [ ] Automatisk måluppfyllelse-tracking
 - [ ] Semantisk sökning i historik

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Save, Sparkles } from 'lucide-react';
+import { X, Save, Sparkles, Zap } from 'lucide-react';
 import type { CallAnalysis } from '../types';
+import { analyzeTranscriptWithAI, isAIAnalysisAvailable } from '../utils/aiAnalyzer';
 
 interface CallAnalysisModalProps {
   sessionId: string;
@@ -15,6 +16,7 @@ interface CallAnalysisModalProps {
 export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
   customerName,
   customerCompany,
+  transcript,
   existingAnalysis,
   onSave,
   onClose
@@ -41,6 +43,7 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [newItem, setNewItem] = useState({
     product: '',
     competitor: '',
@@ -48,6 +51,34 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
     painPoint: '',
     keyTopic: ''
   });
+
+  const handleAIAnalyze = async () => {
+    if (!isAIAnalysisAvailable()) {
+      alert('OpenAI API-nyckel saknas. Konfigurera VITE_OPENAI_API_KEY i .env');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const aiAnalysis = await analyzeTranscriptWithAI(transcript, analysis);
+
+      if (Object.keys(aiAnalysis).length > 0) {
+        setAnalysis(prev => ({
+          ...prev,
+          ...aiAnalysis,
+          isAnalyzed: true
+        }));
+        console.log('🤖 AI Analysis completed:', aiAnalysis);
+      } else {
+        alert('AI-analys returnerade inget resultat. Försök igen.');
+      }
+    } catch (error) {
+      console.error('AI analysis failed:', error);
+      alert('Misslyckades med AI-analys. Se konsolen för detaljer.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -449,31 +480,55 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 p-6 flex justify-end gap-4">
-          <button
-            onClick={onClose}
-            disabled={isSaving}
-            className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
-          >
-            Avbryt
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
-          >
-            {isSaving ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Sparar...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4" />
-                Spara analys
-              </>
-            )}
-          </button>
+        <div className="sticky bottom-0 bg-gray-800 border-t border-gray-700 p-6 flex justify-between items-center gap-4">
+          {/* AI Analyze Button */}
+          {isAIAnalysisAvailable() && (
+            <button
+              onClick={handleAIAnalyze}
+              disabled={isAnalyzing || isSaving}
+              className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+              title="Använd AI för att automatiskt fylla i analysen"
+            >
+              {isAnalyzing ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Analyserar med AI...
+                </>
+              ) : (
+                <>
+                  <Zap className="w-4 h-4" />
+                  AI Analysera
+                </>
+              )}
+            </button>
+          )}
+
+          <div className="flex gap-4">
+            <button
+              onClick={onClose}
+              disabled={isSaving}
+              className="px-6 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              Avbryt
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors flex items-center gap-2 disabled:opacity-50"
+            >
+              {isSaving ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sparar...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  Spara analys
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>
