@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Pause, RotateCcw, Volume2, Mic, Trophy, Target, TrendingUp, MessageSquare } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Volume2, Mic, Target, TrendingUp } from 'lucide-react';
 import { TRAINING_SCENARIOS, type TrainingScenario } from '../data/trainingScenarios';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
