@@ -75,13 +75,6 @@ export const SalesCoach: React.FC = () => {
   // Använd mock om ingen Azure-nyckel finns eller om demo-läge är tvingat
   const useMock = !HAS_AZURE_KEY || forceDemoMode;
 
-  // Växla demo-läge (kräver reload pga React hooks-regler)
-  const handleToggleDemo = () => {
-    const newMode = !forceDemoMode;
-    localStorage.setItem('forceDemoMode', String(newMode));
-    window.location.reload();
-  };
-
   // Välj rätt speech hook
   const speechHookOptions = {
     ...SPEECH_CONFIG,
@@ -301,27 +294,21 @@ export const SalesCoach: React.FC = () => {
                         ))}
                       </select>
                     </div>
-                    {HAS_AZURE_KEY && (
-                      <>
-                        <div className="border-t border-gray-700" />
-                        <button
-                          onClick={() => {
-                            handleToggleDemo();
-                            setShowDemoMenu(false);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3"
-                        >
-                          <div>
-                            <div className="text-sm font-medium text-white">
-                              {forceDemoMode ? 'Byt till Azure' : 'Byt till Demo'}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {forceDemoMode ? 'Använd riktig taligenkänning' : 'Använd demo-läge'}
-                            </div>
-                          </div>
-                        </button>
-                      </>
-                    )}
+                    <div className="border-t border-gray-700" />
+                    <button
+                      onClick={() => {
+                        fileInputRef.current?.click();
+                        setShowDemoMenu(false);
+                      }}
+                      disabled={isListening}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Upload className="w-4 h-4 text-teal-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Ladda upp ljudfil</div>
+                        <div className="text-xs text-gray-400">Välj en WAV-fil att analysera</div>
+                      </div>
+                    </button>
                   </div>
                 </>
               )}
