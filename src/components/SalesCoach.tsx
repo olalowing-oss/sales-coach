@@ -198,12 +198,6 @@ export const SalesCoach: React.FC = () => {
               </div>
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
             </div>
-
-            {useMock && (
-              <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
-                {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
-              </span>
-            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -221,7 +215,7 @@ export const SalesCoach: React.FC = () => {
               <span className="text-sm text-red-400">{speechError}</span>
             )}
 
-            {/* Kundsamtal menu with dropdown */}
+            {/* Samtal menu with dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
@@ -230,17 +224,15 @@ export const SalesCoach: React.FC = () => {
                   setShowDemoMenu(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-                title="Kundsamtal"
+                title="Samtal"
               >
                 <Phone className="w-4 h-4" />
-                <span className="text-sm">Kundsamtal</span>
+                <span className="text-sm">Samtal</span>
               </button>
 
               <KundsamtalDropdown
                 isOpen={showKundsamtalMenu}
                 onClose={() => setShowKundsamtalMenu(false)}
-                isActive={isActive}
-                onStartCall={handleStart}
                 showTranscriptPanel={showTranscriptPanel}
                 showCoachingPanel={showCoachingPanel}
                 onToggleTranscript={handleToggleTranscript}
@@ -547,7 +539,7 @@ export const SalesCoach: React.FC = () => {
             <Phone className="w-16 h-16 text-gray-600 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-400 mb-2">Välkommen till Sales Coach AI</h3>
             <p className="text-gray-500 mb-6">
-              Starta ett samtal från Kundsamtal-menyn eller aktivera panelerna för att komma igång.
+              Starta ett samtal eller aktivera panelerna för att komma igång.
             </p>
             <div className="flex items-center justify-center gap-4">
               <button
