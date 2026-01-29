@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User, Upload, GraduationCap } from 'lucide-react';
+import { Play, Settings, LogOut, User, GraduationCap, Phone } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
@@ -11,7 +11,7 @@ import { ScenariosAdmin } from './ScenariosAdmin';
 import { HistoryPanel } from './HistoryPanel';
 import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { TrainingMode } from './TrainingMode';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { KundsamtalDropdown } from './KundsamtalDropdown';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDemoScripts } from '../data/demoScripts';
 
@@ -38,9 +38,6 @@ export const SalesCoach: React.FC = () => {
     resumeSession,
     addInterimTranscript,
     addFinalTranscript,
-    clearTranscript,
-    clearAllTips,
-    getSessionSummary,
     updateLiveAnalysis
   } = useSessionStore();
 
@@ -53,6 +50,17 @@ export const SalesCoach: React.FC = () => {
   const [showTraining, setShowTraining] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [showTrainingMenu, setShowTrainingMenu] = React.useState(false);
+  const [showKundsamtalMenu, setShowKundsamtalMenu] = React.useState(false);
+
+  // Panel visibility toggles (load from localStorage)
+  const [showTranscriptPanel, setShowTranscriptPanel] = React.useState(() => {
+    const saved = localStorage.getItem('showTranscriptPanel');
+    return saved !== null ? saved === 'true' : true;
+  });
+  const [showCoachingPanel, setShowCoachingPanel] = React.useState(() => {
+    const saved = localStorage.getItem('showCoachingPanel');
+    return saved !== null ? saved === 'true' : true;
+  });
   const [selectedScript, setSelectedScript] = React.useState(() => {
     return localStorage.getItem('selectedDemoScript') || 'copilot-success';
   });
@@ -137,38 +145,27 @@ export const SalesCoach: React.FC = () => {
     }
   }, [startSession, transcribeFile]);
 
-  // Hantera paus/resume
-  const handlePauseResume = useCallback(async () => {
-    if (status === 'recording') {
-      stopListening();
-      pauseSession();
-    } else if (status === 'paused') {
-      await startListening();
-      resumeSession();
-    }
-  }, [status, stopListening, startListening, pauseSession, resumeSession]);
 
-  // Rensa allt
-  const handleClear = useCallback(() => {
-    clearTranscript();
-    clearAllTips();
-  }, [clearTranscript, clearAllTips]);
+  // Toggle panel visibility
+  const handleToggleTranscript = useCallback(() => {
+    setShowTranscriptPanel(prev => {
+      const newValue = !prev;
+      localStorage.setItem('showTranscriptPanel', String(newValue));
+      return newValue;
+    });
+  }, []);
 
-  // Exportera sammanfattning
-  const handleExport = useCallback(() => {
-    const summary = getSessionSummary();
-    const blob = new Blob([summary], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `samtalsnoteringar-${new Date().toISOString().split('T')[0]}.md`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [getSessionSummary]);
+  const handleToggleCoaching = useCallback(() => {
+    setShowCoachingPanel(prev => {
+      const newValue = !prev;
+      localStorage.setItem('showCoachingPanel', String(newValue));
+      return newValue;
+    });
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = async (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 's') {
         e.preventDefault();
         if (status === 'idle' || status === 'stopped') {
@@ -179,15 +176,19 @@ export const SalesCoach: React.FC = () => {
       }
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'p') {
         e.preventDefault();
-        if (status === 'recording' || status === 'paused') {
-          handlePauseResume();
+        if (status === 'recording') {
+          stopListening();
+          pauseSession();
+        } else if (status === 'paused') {
+          await startListening();
+          resumeSession();
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [status, handleStart, handleStop, handlePauseResume]);
+  }, [status, handleStart, handleStop, stopListening, pauseSession, startListening, resumeSession]);
 
   const isActive = status === 'recording' || status === 'paused';
 
@@ -259,10 +260,52 @@ export const SalesCoach: React.FC = () => {
               <span className="text-sm text-red-400">{speechError}</span>
             )}
 
+            {/* Kundsamtal menu with dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowKundsamtalMenu(!showKundsamtalMenu);
+                  setShowTrainingMenu(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+                title="Kundsamtal"
+              >
+                <Phone className="w-4 h-4" />
+                <span className="text-sm">Kundsamtal</span>
+              </button>
+
+              <KundsamtalDropdown
+                isOpen={showKundsamtalMenu}
+                onClose={() => setShowKundsamtalMenu(false)}
+                isActive={isActive}
+                isPaused={status === 'paused'}
+                onStartCall={handleStart}
+                onStopCall={handleStop}
+                onPauseCall={() => {
+                  stopListening();
+                  pauseSession();
+                }}
+                onResumeCall={async () => {
+                  await startListening();
+                  resumeSession();
+                }}
+                showTranscriptPanel={showTranscriptPanel}
+                showCoachingPanel={showCoachingPanel}
+                onToggleTranscript={handleToggleTranscript}
+                onToggleCoaching={handleToggleCoaching}
+                onOpenHistory={() => setShowHistory(true)}
+                onOpenAdmin={() => setShowAdmin(true)}
+                onOpenCoachingAdmin={() => setShowCoachingAdmin(true)}
+              />
+            </div>
+
             {/* Training menu with dropdown */}
             <div className="relative">
               <button
-                onClick={() => setShowTrainingMenu(!showTrainingMenu)}
+                onClick={() => {
+                  setShowTrainingMenu(!showTrainingMenu);
+                  setShowKundsamtalMenu(false);
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                 title="Säljträning"
               >
@@ -311,35 +354,6 @@ export const SalesCoach: React.FC = () => {
               )}
             </div>
 
-            <button
-              onClick={() => setShowCoachingAdmin(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-              title="Coachning-inställningar"
-            >
-              <Lightbulb className="w-4 h-4" />
-              <span className="text-sm">Coachning</span>
-            </button>
-
-            <button
-              onClick={() => setShowAdmin(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-              title="Hantera erbjudanden"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="text-sm">Erbjudanden</span>
-            </button>
-
-            {isSupabaseConfigured() && (
-              <button
-                onClick={() => setShowHistory(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
-                title="Samtalshistorik"
-              >
-                <History className="w-4 h-4" />
-                <span className="text-sm">Historik</span>
-              </button>
-            )}
-
             {/* User menu */}
             <div className="relative">
               <button
@@ -382,119 +396,81 @@ export const SalesCoach: React.FC = () => {
 
       {/* Main content */}
       <main className="max-w-7xl mx-auto p-6">
-        {/* Control bar */}
-        <div className="bg-gray-800 rounded-xl p-4 mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {!isActive && !isProcessing ? (
-              <>
-                <button
-                  onClick={handleStart}
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
-                  title="Starta live-inspelning från mikrofon"
-                >
-                  <Mic className="w-5 h-5" />
-                  Starta samtal
-                </button>
-
-                {!useMock && (
-                  <>
-                    <div className="w-px h-8 bg-gray-700" />
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
-                      title="Ladda upp ljudfil för transkribering"
-                    >
-                      <Upload className="w-5 h-5" />
-                      Ladda upp fil
-                    </button>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".wav,audio/wav,audio/wave"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                    />
-                  </>
-                )}
-              </>
-            ) : isProcessing ? (
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-6 py-3 bg-blue-600/20 text-blue-400 rounded-lg">
-                  <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
-                  Transkriberar fil...
-                </div>
-                <div className="flex-1 max-w-xs">
-                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-600 transition-all duration-300"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
-                </div>
-              </div>
-            ) : (
-              <>
-                <button
-                  onClick={handleStop}
-                  className="flex items-center gap-2 px-4 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
-                >
-                  <Square className="w-5 h-5" />
-                  Avsluta
-                </button>
-
-                <button
-                  onClick={handlePauseResume}
-                  className={`flex items-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors ${status === 'paused'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-yellow-600 hover:bg-yellow-700'
-                    }`}
-                >
-                  {status === 'paused' ? (
-                    <>
-                      <Play className="w-5 h-5" />
-                      Fortsätt
-                    </>
-                  ) : (
-                    <>
-                      <Pause className="w-5 h-5" />
-                      Pausa
-                    </>
-                  )}
-                </button>
-              </>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleClear}
-              className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              title="Rensa allt"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-
-            <button
-              onClick={handleExport}
-              className="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-              title="Exportera noteringar"
-            >
-              <Download className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Two-column layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TranscriptPanel
-            segments={segments}
-            interimText={interimText}
-            isListening={isListening}
+        {/* Hidden file input for upload */}
+        {!useMock && (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".wav,audio/wav,audio/wave"
+            onChange={handleFileUpload}
+            className="hidden"
           />
+        )}
 
-          <CoachingPanel tips={coachingTips} />
+        {/* Processing indicator */}
+        {isProcessing && (
+          <div className="bg-gray-800 rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 px-6 py-3 bg-blue-600/20 text-blue-400 rounded-lg">
+                <div className="w-5 h-5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                Transkriberar fil...
+              </div>
+              <div className="flex-1 max-w-xs">
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-blue-600 transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Two-column layout - conditional rendering based on panel toggles */}
+        <div className={`grid gap-6 ${
+          showTranscriptPanel && showCoachingPanel
+            ? 'grid-cols-1 lg:grid-cols-2'
+            : 'grid-cols-1'
+        }`}>
+          {showTranscriptPanel && (
+            <TranscriptPanel
+              segments={segments}
+              interimText={interimText}
+              isListening={isListening}
+            />
+          )}
+
+          {showCoachingPanel && (
+            <CoachingPanel tips={coachingTips} />
+          )}
         </div>
+
+        {/* Empty state when both panels are hidden */}
+        {!showTranscriptPanel && !showCoachingPanel && (
+          <div className="bg-gray-800 rounded-xl p-12 text-center">
+            <Phone className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-400 mb-2">Välkommen till Sales Coach AI</h3>
+            <p className="text-gray-500 mb-6">
+              Starta ett samtal från Kundsamtal-menyn eller aktivera panelerna för att komma igång.
+            </p>
+            <div className="flex items-center justify-center gap-4">
+              <button
+                onClick={handleToggleTranscript}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Visa transkript
+              </button>
+              <button
+                onClick={handleToggleCoaching}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
+              >
+                Visa coaching
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Live Analysis Panel - shown during active call */}
         {isActive && (
