@@ -271,7 +271,7 @@ export const useMockSpeechRecognition = ({
     // Starta första frasen efter en kort delay
     intervalRef.current = setTimeout(speakNextPhrase, 1000) as any;
 
-  }, [onInterimResult, onFinalResult, onStatusChange]);
+  }, [mockPhrases, onInterimResult, onFinalResult, onStatusChange]);
 
   const stopListening = useCallback(() => {
     if (intervalRef.current) {

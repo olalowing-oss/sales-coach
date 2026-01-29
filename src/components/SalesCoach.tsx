@@ -68,12 +68,18 @@ export const SalesCoach: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Läs demo-läge från localStorage för att överleva page reload
-  const [forceDemoMode] = React.useState(() => {
+  const [forceDemoMode, setForceDemoMode] = React.useState(() => {
     return localStorage.getItem('forceDemoMode') === 'true';
   });
 
   // Använd mock om ingen Azure-nyckel finns eller om demo-läge är tvingat
   const useMock = !HAS_AZURE_KEY || forceDemoMode;
+
+  // Funktion för att byta till riktigt samtal-läge (Azure)
+  const switchToRealCallMode = useCallback(() => {
+    setForceDemoMode(false);
+    localStorage.setItem('forceDemoMode', 'false');
+  }, []);
 
   // Välj rätt speech hook
   const speechHookOptions = {
@@ -158,12 +164,14 @@ export const SalesCoach: React.FC = () => {
   }, []);
 
   const handleShowCallView = useCallback(() => {
+    // Byt till riktigt samtal-läge (Azure)
+    switchToRealCallMode();
     // Visa båda panelerna
     setShowTranscriptPanel(true);
     setShowCoachingPanel(true);
     localStorage.setItem('showTranscriptPanel', 'true');
     localStorage.setItem('showCoachingPanel', 'true');
-  }, []);
+  }, [switchToRealCallMode]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -206,6 +214,12 @@ export const SalesCoach: React.FC = () => {
               </div>
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
             </div>
+
+            {useMock && (
+              <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
+                {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
