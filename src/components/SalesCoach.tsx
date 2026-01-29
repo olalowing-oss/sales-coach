@@ -298,7 +298,10 @@ export const SalesCoach: React.FC = () => {
                         onChange={(e) => {
                           setSelectedScript(e.target.value);
                           localStorage.setItem('selectedDemoScript', e.target.value);
+                          localStorage.setItem('forceDemoMode', 'true');
                           setShowDemoMenu(false);
+                          // Reload för att aktivera demo-läge med rätt hooks
+                          window.location.reload();
                         }}
                         disabled={isListening}
                         className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
