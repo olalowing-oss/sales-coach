@@ -247,6 +247,23 @@ export const LiveCallAnalysisPanel: React.FC<LiveCallAnalysisPanelProps> = ({
         />
       </div>
 
+      {/* AI Summary */}
+      <div className="bg-gradient-to-br from-purple-900/30 to-blue-900/30 border border-purple-500/30 rounded-lg p-3">
+        <label className="text-xs text-purple-400 mb-2 block flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          Sammanfattning av samtalet
+        </label>
+        <textarea
+          value={analysis.aiSummary || ''}
+          onChange={(e) => updateField('aiSummary', e.target.value)}
+          className="w-full bg-gray-800/50 text-white text-sm rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[80px] resize-none"
+          placeholder="AI genererar en sammanfattning automatiskt under samtalet..."
+        />
+        <p className="text-xs text-purple-400/60 mt-2">
+          {analysis.aiSummary ? '✨ AI-genererad sammanfattning' : 'Väntar på AI-analys...'}
+        </p>
+      </div>
+
       <p className="text-xs text-gray-500 text-center">
         Analysen sparas automatiskt när samtalet avslutas
       </p>

@@ -213,7 +213,28 @@ export const useSessionStore = create<SessionState>((set, get) => ({
         .then(aiAnalysis => {
           if (Object.keys(aiAnalysis).length > 0) {
             console.log('🤖 AI Analysis applied:', aiAnalysis);
+
+            // Uppdatera live-analys
             set({ liveAnalysis: { ...get().liveAnalysis, ...aiAnalysis } });
+
+            // Om AI identifierade ett företagsnamn, uppdatera session customer info
+            const companyName = (aiAnalysis as any).companyName;
+            if (companyName && session) {
+              const updatedSession = {
+                ...session,
+                customer: {
+                  name: session.customer?.name || '',
+                  company: companyName,
+                  role: session.customer?.role
+                }
+              };
+              set({ session: updatedSession });
+
+              // Uppdatera också i databasen
+              saveSessionToDb(updatedSession).catch(err =>
+                console.error('Failed to update session with company name:', err)
+              );
+            }
           }
         })
         .catch(error => {

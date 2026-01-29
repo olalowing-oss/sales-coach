@@ -436,6 +436,27 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
             </div>
           </section>
 
+          {/* AI-genererad sammanfattning */}
+          <section>
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-purple-500" />
+              Sammanfattning av samtalet
+            </h3>
+            <div className="bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
+              <textarea
+                value={analysis.aiSummary || ''}
+                onChange={(e) => setAnalysis({ ...analysis, aiSummary: e.target.value })}
+                className="w-full bg-gray-800/50 text-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 min-h-[100px] leading-relaxed"
+                placeholder="AI genererar en sammanfattning automatiskt under samtalet, eller skriv din egen här..."
+              />
+              {analysis.aiSummary && (
+                <p className="text-xs text-purple-400/60 mt-3">
+                  ✨ AI-genererad sammanfattning (kan redigeras)
+                </p>
+              )}
+            </div>
+          </section>
+
           {/* Uppföljning */}
           <section>
             <h3 className="text-lg font-semibold text-white mb-4">Uppföljning</h3>

@@ -177,6 +177,15 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                             <p className="text-xs text-gray-500">{session.customer_role}</p>
                           )}
                         </>
+                      ) : session.customer_company ? (
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-white">{session.customer_company}</h3>
+                          {session.is_analyzed && (
+                            <span title="Analyserad">
+                              <CheckCircle className="w-5 h-5 text-green-500" />
+                            </span>
+                          )}
+                        </div>
                       ) : (
                         <div className="flex items-center gap-2">
                           <h3 className="text-lg font-semibold text-white">Unnamed Call</h3>

@@ -40,6 +40,7 @@ export async function analyzeTranscriptWithAI(
 Din uppgift är att analysera transkript från säljsamtal och extrahera strukturerad information.
 
 Fokusera på:
+- Företagsnamn (om det nämns i samtalet)
 - Bransch och företagsstorlek
 - Vilka Microsoft-produkter som diskuteras
 - Konkurrenter som nämns
@@ -70,6 +71,10 @@ ${JSON.stringify(existingAnalysis, null, 2)}` : ''}`
           parameters: {
             type: 'object',
             properties: {
+              companyName: {
+                type: 'string',
+                description: 'Company name if mentioned in the call (e.g., "Nordiska Byggsystem AB", "TrendStyle Retail")'
+              },
               industry: {
                 type: 'string',
                 description: 'Customer industry (e.g., "Byggbranschen", "Retail", "Tillverkning")'
@@ -159,7 +164,8 @@ ${JSON.stringify(existingAnalysis, null, 2)}` : ''}`
     const analysis = JSON.parse(functionCall.arguments);
 
     // Convert to CallAnalysis format
-    const result: Partial<CallAnalysis> = {
+    const result: Partial<CallAnalysis> & { companyName?: string } = {
+      companyName: analysis.companyName,
       industry: analysis.industry || existingAnalysis?.industry,
       companySize: analysis.companySize || existingAnalysis?.companySize,
       callPurpose: analysis.callPurpose || existingAnalysis?.callPurpose,
