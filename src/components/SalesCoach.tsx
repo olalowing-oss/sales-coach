@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User, Upload } from 'lucide-react';
+import { Mic, Square, Pause, Play, Trash2, Download, Settings, Lightbulb, History, LogOut, User, Upload, GraduationCap } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
@@ -9,6 +9,7 @@ import { AdminPanel } from './AdminPanel';
 import { CoachingAdminPanel } from './CoachingAdminPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
+import { TrainingMode } from './TrainingMode';
 import { isSupabaseConfigured } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDemoScripts } from '../data/demoScripts';
@@ -47,6 +48,7 @@ export const SalesCoach: React.FC = () => {
   const [showAdmin, setShowAdmin] = React.useState(false);
   const [showCoachingAdmin, setShowCoachingAdmin] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
+  const [showTraining, setShowTraining] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [selectedScript, setSelectedScript] = React.useState(() => {
     return localStorage.getItem('selectedDemoScript') || 'copilot-success';
@@ -253,6 +255,15 @@ export const SalesCoach: React.FC = () => {
             {speechError && (
               <span className="text-sm text-red-400">{speechError}</span>
             )}
+
+            <button
+              onClick={() => setShowTraining(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+              title="AI Säljträning"
+            >
+              <GraduationCap className="w-4 h-4" />
+              <span className="text-sm">Träning</span>
+            </button>
 
             <button
               onClick={() => setShowCoachingAdmin(true)}
@@ -464,6 +475,7 @@ export const SalesCoach: React.FC = () => {
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
       {showCoachingAdmin && <CoachingAdminPanel onClose={() => setShowCoachingAdmin(false)} />}
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
+      {showTraining && <TrainingMode onClose={() => setShowTraining(false)} />}
     </div>
   );
 };
