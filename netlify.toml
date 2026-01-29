@@ -7,6 +7,11 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Serverless functions configuration
+[functions]
+  node_bundler = "esbuild"
+  directory = "netlify/functions"
+
 # Redirects for SPA routing
 [[redirects]]
   from = "/*"
