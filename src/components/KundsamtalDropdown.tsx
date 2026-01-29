@@ -1,15 +1,9 @@
 import React from 'react';
-import { Mic, Square, Pause, Play, Eye, EyeOff, History, Settings, Lightbulb } from 'lucide-react';
+import { Eye, EyeOff, History, Settings, Lightbulb } from 'lucide-react';
 
 interface KundsamtalDropdownProps {
   isOpen: boolean;
   onClose: () => void;
-  isActive: boolean;
-  isPaused: boolean;
-  onStartCall: () => void;
-  onStopCall: () => void;
-  onPauseCall: () => void;
-  onResumeCall: () => void;
   showTranscriptPanel: boolean;
   showCoachingPanel: boolean;
   onToggleTranscript: () => void;
@@ -22,12 +16,6 @@ interface KundsamtalDropdownProps {
 export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
   isOpen,
   onClose,
-  isActive,
-  isPaused,
-  onStartCall,
-  onStopCall,
-  onPauseCall,
-  onResumeCall,
   showTranscriptPanel,
   showCoachingPanel,
   onToggleTranscript,
@@ -54,67 +42,10 @@ export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
 
       {/* Dropdown Menu */}
       <div className="absolute left-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20">
-        {/* Start Call - Only show when not active */}
-        {!isActive && (
-          <button
-            onClick={() => handleItemClick(onStartCall)}
-            className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
-          >
-            <Mic className="w-4 h-4 text-blue-400" />
-            <div>
-              <div className="text-sm font-medium text-white">Starta samtal</div>
-              <div className="text-xs text-gray-400">Live-inspelning från mikrofon</div>
-            </div>
-          </button>
-        )}
-
-        {/* Stop Call - Only show when active */}
-        {isActive && (
-          <button
-            onClick={() => handleItemClick(onStopCall)}
-            className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
-          >
-            <Square className="w-4 h-4 text-red-400" />
-            <div>
-              <div className="text-sm font-medium text-white">Stoppa samtal</div>
-              <div className="text-xs text-gray-400">Avsluta inspelning</div>
-            </div>
-          </button>
-        )}
-
-        {/* Pause/Resume Call - Only show when active */}
-        {isActive && (
-          <button
-            onClick={() => handleItemClick(isPaused ? onResumeCall : onPauseCall)}
-            className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-3"
-          >
-            {isPaused ? (
-              <>
-                <Play className="w-4 h-4 text-green-400" />
-                <div>
-                  <div className="text-sm font-medium text-white">Återuppta samtal</div>
-                  <div className="text-xs text-gray-400">Fortsätt inspelning</div>
-                </div>
-              </>
-            ) : (
-              <>
-                <Pause className="w-4 h-4 text-yellow-400" />
-                <div>
-                  <div className="text-sm font-medium text-white">Pausa samtal</div>
-                  <div className="text-xs text-gray-400">Pausa inspelning</div>
-                </div>
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Separator */}
-        <div className="border-t border-gray-700" />
-
         {/* Toggle Transcript Panel */}
         <button
           onClick={() => handleItemClick(onToggleTranscript)}
-          className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-3"
+          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
         >
           {showTranscriptPanel ? (
             <Eye className="w-4 h-4 text-blue-400" />

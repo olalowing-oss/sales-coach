@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Play, Settings, LogOut, User, GraduationCap, Phone } from 'lucide-react';
+import { Play, Settings, LogOut, User, GraduationCap, Phone, Mic, Square, Pause, Upload, Beaker } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
@@ -51,6 +51,7 @@ export const SalesCoach: React.FC = () => {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [showTrainingMenu, setShowTrainingMenu] = React.useState(false);
   const [showKundsamtalMenu, setShowKundsamtalMenu] = React.useState(false);
+  const [showDemoMenu, setShowDemoMenu] = React.useState(false);
 
   // Panel visibility toggles (load from localStorage)
   const [showTranscriptPanel, setShowTranscriptPanel] = React.useState(() => {
@@ -210,39 +211,6 @@ export const SalesCoach: React.FC = () => {
                 Demo-läge
               </span>
             )}
-
-            {HAS_AZURE_KEY && (
-              <button
-                onClick={handleToggleDemo}
-                className={`px-3 py-1 text-xs rounded-full transition-colors ${
-                  forceDemoMode
-                    ? 'bg-yellow-600/20 text-yellow-400 hover:bg-yellow-600/30'
-                    : 'bg-blue-600/20 text-blue-400 hover:bg-blue-600/30'
-                }`}
-              >
-                {forceDemoMode ? 'Byt till Azure' : 'Byt till Demo'}
-              </button>
-            )}
-
-            {/* Demo Script Selector */}
-            {useMock && (
-              <select
-                value={selectedScript}
-                onChange={(e) => {
-                  setSelectedScript(e.target.value);
-                  localStorage.setItem('selectedDemoScript', e.target.value);
-                }}
-                disabled={isListening}
-                className="px-3 py-1 text-xs bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Välj demo-scenario"
-              >
-                {getAllDemoScripts().map((script) => (
-                  <option key={script.id} value={script.id}>
-                    {script.name}
-                  </option>
-                ))}
-              </select>
-            )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -266,6 +234,7 @@ export const SalesCoach: React.FC = () => {
                 onClick={() => {
                   setShowKundsamtalMenu(!showKundsamtalMenu);
                   setShowTrainingMenu(false);
+                  setShowDemoMenu(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 title="Kundsamtal"
@@ -277,18 +246,6 @@ export const SalesCoach: React.FC = () => {
               <KundsamtalDropdown
                 isOpen={showKundsamtalMenu}
                 onClose={() => setShowKundsamtalMenu(false)}
-                isActive={isActive}
-                isPaused={status === 'paused'}
-                onStartCall={handleStart}
-                onStopCall={handleStop}
-                onPauseCall={() => {
-                  stopListening();
-                  pauseSession();
-                }}
-                onResumeCall={async () => {
-                  await startListening();
-                  resumeSession();
-                }}
                 showTranscriptPanel={showTranscriptPanel}
                 showCoachingPanel={showCoachingPanel}
                 onToggleTranscript={handleToggleTranscript}
@@ -299,12 +256,82 @@ export const SalesCoach: React.FC = () => {
               />
             </div>
 
+            {/* Demosamtal menu with dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowDemoMenu(!showDemoMenu);
+                  setShowKundsamtalMenu(false);
+                  setShowTrainingMenu(false);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 rounded-lg transition-colors"
+                title="Demosamtal"
+              >
+                <Beaker className="w-4 h-4" />
+                <span className="text-sm">Demosamtal</span>
+              </button>
+
+              {showDemoMenu && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowDemoMenu(false)}
+                  />
+                  {/* Dropdown menu */}
+                  <div className="absolute left-0 mt-2 w-64 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-20">
+                    <div className="p-3">
+                      <div className="text-xs text-gray-400 mb-2">Välj demo-scenario</div>
+                      <select
+                        value={selectedScript}
+                        onChange={(e) => {
+                          setSelectedScript(e.target.value);
+                          localStorage.setItem('selectedDemoScript', e.target.value);
+                          setShowDemoMenu(false);
+                        }}
+                        disabled={isListening}
+                        className="w-full px-3 py-2 text-sm bg-gray-700 border border-gray-600 rounded-lg text-gray-300 hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {getAllDemoScripts().map((script) => (
+                          <option key={script.id} value={script.id}>
+                            {script.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    {HAS_AZURE_KEY && (
+                      <>
+                        <div className="border-t border-gray-700" />
+                        <button
+                          onClick={() => {
+                            handleToggleDemo();
+                            setShowDemoMenu(false);
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3"
+                        >
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {forceDemoMode ? 'Byt till Azure' : 'Byt till Demo'}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {forceDemoMode ? 'Använd riktig taligenkänning' : 'Använd demo-läge'}
+                            </div>
+                          </div>
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+
             {/* Training menu with dropdown */}
             <div className="relative">
               <button
                 onClick={() => {
                   setShowTrainingMenu(!showTrainingMenu);
                   setShowKundsamtalMenu(false);
+                  setShowDemoMenu(false);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
                 title="Säljträning"
@@ -425,6 +452,86 @@ export const SalesCoach: React.FC = () => {
                 <p className="text-xs text-gray-400 mt-1">{Math.round(progress)}%</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Call controls - show above panels */}
+        {(showTranscriptPanel || showCoachingPanel) && !isProcessing && (
+          <div className="bg-gray-800 rounded-xl p-4 mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {!isActive ? (
+                <>
+                  <button
+                    onClick={handleStart}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors"
+                    title="Starta live-inspelning från mikrofon"
+                  >
+                    <Mic className="w-5 h-5" />
+                    Starta samtal
+                  </button>
+
+                  {!useMock && (
+                    <>
+                      <div className="w-px h-8 bg-gray-700" />
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+                        title="Ladda upp ljudfil för transkribering"
+                      >
+                        <Upload className="w-5 h-5" />
+                        Ladda upp fil
+                      </button>
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={handleStop}
+                    className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors"
+                  >
+                    <Square className="w-5 h-5" />
+                    Stoppa
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      if (status === 'recording') {
+                        stopListening();
+                        pauseSession();
+                      } else if (status === 'paused') {
+                        await startListening();
+                        resumeSession();
+                      }
+                    }}
+                    className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                      status === 'paused'
+                        ? 'bg-green-600 hover:bg-green-700'
+                        : 'bg-yellow-600 hover:bg-yellow-700'
+                    }`}
+                  >
+                    {status === 'paused' ? (
+                      <>
+                        <Play className="w-5 h-5" />
+                        Fortsätt
+                      </>
+                    ) : (
+                      <>
+                        <Pause className="w-5 h-5" />
+                        Pausa
+                      </>
+                    )}
+                  </button>
+                </>
+              )}
+            </div>
+
+            {isActive && (
+              <div className="text-sm text-gray-400">
+                {status === 'recording' && 'Inspelning pågår...'}
+                {status === 'paused' && 'Pausad'}
+              </div>
+            )}
           </div>
         )}
 
