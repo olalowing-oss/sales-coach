@@ -199,9 +199,11 @@ export const SalesCoach: React.FC = () => {
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
             </div>
 
-            <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
-              {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
-            </span>
+            {useMock && (
+              <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
+                {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-4">
