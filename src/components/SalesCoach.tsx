@@ -68,7 +68,7 @@ export const SalesCoach: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Läs demo-läge från localStorage för att överleva page reload
-  const [forceDemoMode, setForceDemoMode] = React.useState(() => {
+  const [forceDemoMode] = React.useState(() => {
     return localStorage.getItem('forceDemoMode') === 'true';
   });
 
@@ -76,9 +76,10 @@ export const SalesCoach: React.FC = () => {
   const useMock = !HAS_AZURE_KEY || forceDemoMode;
 
   // Funktion för att byta till riktigt samtal-läge (Azure)
+  // Kräver reload eftersom vi byter mellan olika React hooks
   const switchToRealCallMode = useCallback(() => {
-    setForceDemoMode(false);
     localStorage.setItem('forceDemoMode', 'false');
+    window.location.reload();
   }, []);
 
   // Välj rätt speech hook
