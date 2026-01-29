@@ -475,20 +475,6 @@ export const SalesCoach: React.FC = () => {
                     <Mic className="w-5 h-5" />
                     Starta samtal
                   </button>
-
-                  {!useMock && (
-                    <>
-                      <div className="w-px h-8 bg-gray-700" />
-                      <button
-                        onClick={() => fileInputRef.current?.click()}
-                        className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
-                        title="Ladda upp ljudfil för transkribering"
-                      >
-                        <Upload className="w-5 h-5" />
-                        Ladda upp fil
-                      </button>
-                    </>
-                  )}
                 </>
               ) : (
                 <>
