@@ -137,13 +137,13 @@ I Supabase SQL Editor, kör följande:
 
 ### OpenAI API för AI-driven Analys
 
-**Arkitektur:** Säker serverless-lösning via Netlify Functions - API-nyckeln exponeras aldrig i webbläsaren.
+**Arkitektur:** Säker serverless-lösning via Vercel Functions - API-nyckeln exponeras aldrig i webbläsaren.
 
 1. Gå till [OpenAI Platform](https://platform.openai.com/api-keys)
 2. Skapa ett konto och lägg till betalningsmetod
 3. Generera en ny API-nyckel
 4. **Lokal utveckling:** Kopiera nyckeln till `VITE_OPENAI_API_KEY` i `.env` (endast för dev)
-5. **Produktion:** Lägg till `OPENAI_API_KEY` som environment variable i Netlify (se Deployment-sektionen)
+5. **Produktion:** Lägg till `OPENAI_API_KEY` som environment variable i Vercel (se Deployment-sektionen)
 
 **Modell som används:** GPT-4o (senaste, mest kraftfulla modellen)
 
@@ -157,7 +157,7 @@ I Supabase SQL Editor, kör följande:
 - ✅ AI-genererade sammanfattningar
 - ✅ Kontextuell förståelse av kundintentioner
 - ✅ Automatisk "AI Analysera" knapp i analys-modal
-- ✅ Säker backend via Netlify Functions (ingen exponering av API-nyckel)
+- ✅ Säker backend via Vercel Functions (ingen exponering av API-nyckel)
 - ⚠️ Fallback till pattern matching om nyckel saknas
 
 ## ☁️ Azure Speech-konfiguration (Valfritt)
@@ -210,15 +210,14 @@ b3-sales-coach/
 │   ├── App.tsx
 │   ├── main.tsx
 │   └── index.css
-├── netlify/
-│   └── functions/                 # Serverless functions
-│       └── analyze-call.ts           # OpenAI AI-analys (säker backend)
-├── docs/                       # Dokumentation
-│   ├── ARCHITECTURE.md            # Fullständig arkitektur
-│   └── SETUP.md                   # Steg-för-steg setup
+├── api/                           # Vercel Serverless Functions
+│   └── analyze-call.ts               # OpenAI AI-analys (säker backend)
+├── docs/                          # Dokumentation
+│   ├── ARCHITECTURE.md               # Fullständig arkitektur
+│   └── SETUP.md                      # Steg-för-steg setup
 ├── supabase/
-│   └── schema.sql                 # Databas-schema
-├── netlify.toml                   # Netlify-konfiguration
+│   └── schema.sql                    # Databas-schema
+├── vercel.json                    # Vercel-konfiguration
 ├── package.json
 └── README.md                      # Denna fil
 ```
@@ -272,10 +271,10 @@ b3-sales-coach/
 
 ### Backend & Services
 - **OpenAI GPT-4o** - AI-driven samtalsanalys och sammanfattningar
-- **Netlify Functions** - Serverless backend för säker OpenAI API-kommunikation
+- **Vercel Functions** - Serverless backend för säker OpenAI API-kommunikation
 - **Azure Speech Services** - Real-time + batch transcription (svenska)
 - **Supabase** - PostgreSQL databas med RLS
-- **Netlify** - Hosting & CI/CD
+- **Vercel** - Hosting & CI/CD
 
 ## 🔮 Roadmap
 
@@ -321,19 +320,27 @@ b3-sales-coach/
 
 ## 🚀 Deployment
 
-### Netlify
+### Vercel
 
-Projektet deployar automatiskt till Netlify vid push till `main`:
+Projektet deployar automatiskt till Vercel vid push till `main`:
 
+1. **Första gången:**
+   - Gå till [vercel.com](https://vercel.com)
+   - Importera ditt GitHub-repo
+   - Vercel konfigureras automatiskt via `vercel.json`
+
+2. **Kontinuerliga deploys:**
 ```bash
 git push origin main
-# Netlify bygger och deployar automatiskt
+# Vercel bygger och deployar automatiskt
 ```
 
-**Environment Variables i Netlify:**
+**Environment Variables i Vercel:**
+
+I Vercel Dashboard (Settings > Environment Variables), lägg till:
 - `VITE_SUPABASE_URL` - Supabase project URL
 - `VITE_SUPABASE_ANON_KEY` - Supabase anon key
-- `OPENAI_API_KEY` - OpenAI API key (server-side, används av Netlify Functions)
+- `OPENAI_API_KEY` - OpenAI API key (server-side, används av Vercel Functions)
 - `VITE_AZURE_SPEECH_KEY` - Azure Speech key (valfritt, demo-läge fungerar utan)
 - `VITE_AZURE_SPEECH_REGION` - Azure region (valfritt)
 

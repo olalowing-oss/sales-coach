@@ -1,38 +1,39 @@
-import { Handler } from '@netlify/functions';
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 
 /**
- * Netlify Serverless Function for AI Call Analysis
+ * Vercel Serverless Function for AI Call Analysis
  * Securely handles OpenAI API calls on the backend
  */
-const handler: Handler = async (event) => {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Only allow POST requests
-  if (event.httpMethod !== 'POST') {
-    return {
-      statusCode: 405,
-      body: JSON.stringify({ error: 'Method not allowed' })
-    };
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   // Check API key is configured
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
     console.error('OPENAI_API_KEY not configured');
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: 'Server configuration error' })
-    };
+    return res.status(500).json({ error: 'Server configuration error' });
   }
 
   try {
     // Parse request body
-    const { transcript, existingAnalysis } = JSON.parse(event.body || '{}');
+    const { transcript, existingAnalysis } = req.body;
 
     if (!transcript || typeof transcript !== 'string') {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'Invalid transcript' })
-      };
+      return res.status(400).json({ error: 'Invalid transcript' });
     }
 
     // Initialize OpenAI client (server-side, secure)
@@ -172,34 +173,17 @@ ${JSON.stringify(existingAnalysis, null, 2)}` : ''}`
     const analysis = JSON.parse(functionCall.arguments);
 
     // Return successful response
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*', // Allow CORS
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
-      body: JSON.stringify({
-        success: true,
-        analysis
-      })
-    };
+    return res.status(200).json({
+      success: true,
+      analysis
+    });
 
   } catch (error: any) {
     console.error('AI Analysis error:', error);
 
-    return {
-      statusCode: 500,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({
-        success: false,
-        error: error.message || 'Failed to analyze call'
-      })
-    };
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Failed to analyze call'
+    });
   }
-};
-
-export { handler };
+}

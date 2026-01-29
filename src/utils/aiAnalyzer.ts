@@ -9,8 +9,8 @@ export async function analyzeTranscriptWithAI(
   existingAnalysis?: Partial<CallAnalysis>
 ): Promise<Partial<CallAnalysis>> {
   try {
-    // Call secure Netlify Function instead of OpenAI directly
-    const response = await fetch('/.netlify/functions/analyze-call', {
+    // Call secure Vercel Function instead of OpenAI directly
+    const response = await fetch('/api/analyze-call', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
