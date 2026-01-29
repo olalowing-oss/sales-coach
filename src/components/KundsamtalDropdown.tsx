@@ -1,9 +1,11 @@
 import React from 'react';
-import { Eye, EyeOff, History, Settings, Lightbulb } from 'lucide-react';
+import { Eye, EyeOff, History, Settings, Lightbulb, Mic } from 'lucide-react';
 
 interface KundsamtalDropdownProps {
   isOpen: boolean;
   onClose: () => void;
+  isActive: boolean;
+  onStartCall: () => void;
   showTranscriptPanel: boolean;
   showCoachingPanel: boolean;
   onToggleTranscript: () => void;
@@ -16,6 +18,8 @@ interface KundsamtalDropdownProps {
 export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
   isOpen,
   onClose,
+  isActive,
+  onStartCall,
   showTranscriptPanel,
   showCoachingPanel,
   onToggleTranscript,
@@ -42,10 +46,29 @@ export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
 
       {/* Dropdown Menu */}
       <div className="absolute left-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20">
+        {/* Start Call - Only show when not active */}
+        {!isActive && (
+          <>
+            <button
+              onClick={() => handleItemClick(onStartCall)}
+              className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
+            >
+              <Mic className="w-4 h-4 text-blue-400" />
+              <div>
+                <div className="text-sm font-medium text-white">Starta samtal</div>
+                <div className="text-xs text-gray-400">Börja inspelning från mikrofon</div>
+              </div>
+            </button>
+            <div className="border-t border-gray-700" />
+          </>
+        )}
+
         {/* Toggle Transcript Panel */}
         <button
           onClick={() => handleItemClick(onToggleTranscript)}
-          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
+          className={`w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-3 ${
+            !isActive ? '' : 'rounded-t-lg'
+          }`}
         >
           {showTranscriptPanel ? (
             <Eye className="w-4 h-4 text-blue-400" />

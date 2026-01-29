@@ -246,6 +246,8 @@ export const SalesCoach: React.FC = () => {
               <KundsamtalDropdown
                 isOpen={showKundsamtalMenu}
                 onClose={() => setShowKundsamtalMenu(false)}
+                isActive={isActive}
+                onStartCall={handleStart}
                 showTranscriptPanel={showTranscriptPanel}
                 showCoachingPanel={showCoachingPanel}
                 onToggleTranscript={handleToggleTranscript}
