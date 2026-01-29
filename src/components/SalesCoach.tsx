@@ -7,6 +7,7 @@ import { TranscriptPanel } from './TranscriptPanel';
 import { CoachingPanel } from './CoachingPanel';
 import { AdminPanel } from './AdminPanel';
 import { CoachingAdminPanel } from './CoachingAdminPanel';
+import { ScenariosAdmin } from './ScenariosAdmin';
 import { HistoryPanel } from './HistoryPanel';
 import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { TrainingMode } from './TrainingMode';
@@ -47,9 +48,11 @@ export const SalesCoach: React.FC = () => {
 
   const [showAdmin, setShowAdmin] = React.useState(false);
   const [showCoachingAdmin, setShowCoachingAdmin] = React.useState(false);
+  const [showScenariosAdmin, setShowScenariosAdmin] = React.useState(false);
   const [showHistory, setShowHistory] = React.useState(false);
   const [showTraining, setShowTraining] = React.useState(false);
   const [showUserMenu, setShowUserMenu] = React.useState(false);
+  const [showTrainingMenu, setShowTrainingMenu] = React.useState(false);
   const [selectedScript, setSelectedScript] = React.useState(() => {
     return localStorage.getItem('selectedDemoScript') || 'copilot-success';
   });
@@ -256,14 +259,57 @@ export const SalesCoach: React.FC = () => {
               <span className="text-sm text-red-400">{speechError}</span>
             )}
 
-            <button
-              onClick={() => setShowTraining(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
-              title="AI Säljträning"
-            >
-              <GraduationCap className="w-4 h-4" />
-              <span className="text-sm">Träning</span>
-            </button>
+            {/* Training menu with dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setShowTrainingMenu(!showTrainingMenu)}
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors"
+                title="Säljträning"
+              >
+                <GraduationCap className="w-4 h-4" />
+                <span className="text-sm">Säljträning</span>
+              </button>
+
+              {showTrainingMenu && (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setShowTrainingMenu(false)}
+                  />
+                  {/* Dropdown menu */}
+                  <div className="absolute right-0 mt-2 w-56 bg-gray-800 border border-gray-700 rounded-lg shadow-lg z-20">
+                    <button
+                      onClick={() => {
+                        setShowTraining(true);
+                        setShowTrainingMenu(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
+                    >
+                      <Play className="w-4 h-4 text-purple-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Starta träning</div>
+                        <div className="text-xs text-gray-400">Träna mot AI-kunder</div>
+                      </div>
+                    </button>
+                    <div className="border-t border-gray-700" />
+                    <button
+                      onClick={() => {
+                        setShowScenariosAdmin(true);
+                        setShowTrainingMenu(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3"
+                    >
+                      <Settings className="w-4 h-4 text-gray-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Hantera scenarier</div>
+                        <div className="text-xs text-gray-400">Skapa och redigera</div>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               onClick={() => setShowCoachingAdmin(true)}
@@ -474,6 +520,7 @@ export const SalesCoach: React.FC = () => {
       {/* Admin Panels */}
       {showAdmin && <AdminPanel onClose={() => setShowAdmin(false)} />}
       {showCoachingAdmin && <CoachingAdminPanel onClose={() => setShowCoachingAdmin(false)} />}
+      {showScenariosAdmin && <ScenariosAdmin onClose={() => setShowScenariosAdmin(false)} />}
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
       {showTraining && <TrainingMode onClose={() => setShowTraining(false)} />}
     </div>

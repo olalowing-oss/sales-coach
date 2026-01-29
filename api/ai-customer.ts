@@ -63,14 +63,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const client = new OpenAI({ apiKey });
 
-    // Build conversation context
-    const conversationContext = conversationHistory
+    // Build conversation context (only last 5 messages for speed)
+    const recentHistory = conversationHistory.slice(-5);
+    const conversationContext = recentHistory
       .map(msg => `${msg.role === 'customer' ? 'Kund' : 'Säljare'}: ${msg.content}`)
       .join('\n');
 
-    // Generate AI customer response
+    // Generate AI customer response with faster model
     const completion = await client.chat.completions.create({
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',  // 60% faster, 80% cheaper than gpt-4o
       messages: [
         {
           role: 'system',
@@ -192,7 +193,8 @@ Generera kundens nästa replik och coaching-feedback.`
         }
       ],
       function_call: { name: 'generate_customer_response' },
-      temperature: 0.8 // Higher temperature for more natural conversation
+      temperature: 0.8, // Higher temperature for more natural conversation
+      max_tokens: 800  // Limit output length for faster responses
     });
 
     const functionCall = completion.choices[0]?.message?.function_call;
