@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, EyeOff, History, Settings, Lightbulb } from 'lucide-react';
+import { Eye, EyeOff, History, Settings, Lightbulb, Phone } from 'lucide-react';
 
 interface KundsamtalDropdownProps {
   isOpen: boolean;
@@ -8,6 +8,7 @@ interface KundsamtalDropdownProps {
   showCoachingPanel: boolean;
   onToggleTranscript: () => void;
   onToggleCoaching: () => void;
+  onShowCallView: () => void;
   onOpenHistory: () => void;
   onOpenAdmin: () => void;
   onOpenCoachingAdmin: () => void;
@@ -20,6 +21,7 @@ export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
   showCoachingPanel,
   onToggleTranscript,
   onToggleCoaching,
+  onShowCallView,
   onOpenHistory,
   onOpenAdmin,
   onOpenCoachingAdmin,
@@ -42,10 +44,25 @@ export const KundsamtalDropdown: React.FC<KundsamtalDropdownProps> = ({
 
       {/* Dropdown Menu */}
       <div className="absolute left-0 mt-2 w-72 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20">
+        {/* Show Call View */}
+        <button
+          onClick={() => handleItemClick(onShowCallView)}
+          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
+        >
+          <Phone className="w-4 h-4 text-blue-400" />
+          <div>
+            <div className="text-sm font-medium text-white">Samtal</div>
+            <div className="text-xs text-gray-400">Visa samtalsvyn</div>
+          </div>
+        </button>
+
+        {/* Separator */}
+        <div className="border-t border-gray-700" />
+
         {/* Toggle Transcript Panel */}
         <button
           onClick={() => handleItemClick(onToggleTranscript)}
-          className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-t-lg transition-colors flex items-center gap-3"
+          className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-3"
         >
           {showTranscriptPanel ? (
             <Eye className="w-4 h-4 text-blue-400" />

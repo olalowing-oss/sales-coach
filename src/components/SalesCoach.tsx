@@ -157,6 +157,14 @@ export const SalesCoach: React.FC = () => {
     });
   }, []);
 
+  const handleShowCallView = useCallback(() => {
+    // Visa båda panelerna
+    setShowTranscriptPanel(true);
+    setShowCoachingPanel(true);
+    localStorage.setItem('showTranscriptPanel', 'true');
+    localStorage.setItem('showCoachingPanel', 'true');
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = async (e: KeyboardEvent) => {
@@ -237,6 +245,7 @@ export const SalesCoach: React.FC = () => {
                 showCoachingPanel={showCoachingPanel}
                 onToggleTranscript={handleToggleTranscript}
                 onToggleCoaching={handleToggleCoaching}
+                onShowCallView={handleShowCallView}
                 onOpenHistory={() => setShowHistory(true)}
                 onOpenAdmin={() => setShowAdmin(true)}
                 onOpenCoachingAdmin={() => setShowCoachingAdmin(true)}
