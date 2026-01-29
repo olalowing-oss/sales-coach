@@ -126,6 +126,14 @@ const NEXT_STEPS_PATTERNS = [
     nextStep: 'Skicka offert'
   },
   {
+    pattern: /skicka.*?(avtal|kontrakt)|signera|skriv.*?på/i,
+    nextStep: 'Skicka avtal'
+  },
+  {
+    pattern: /börja|starta|sätt igång|kick.*?off|kicka.*?igång.*?(nästa|i|om|direkt|nu)/i,
+    nextStep: 'Påbörja implementation'
+  },
+  {
     pattern: /skicka.*?(information|dokument)|mejla|maila|mail/i,
     nextStep: 'Skicka information'
   },
