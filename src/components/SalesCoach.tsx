@@ -199,11 +199,9 @@ export const SalesCoach: React.FC = () => {
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
             </div>
 
-            {useMock && (
-              <span className="px-2 py-1 bg-yellow-600/20 text-yellow-400 text-xs rounded-full">
-                Demo-läge
-              </span>
-            )}
+            <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
+              {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
+            </span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -413,15 +411,13 @@ export const SalesCoach: React.FC = () => {
       {/* Main content */}
       <main className="max-w-7xl mx-auto p-6">
         {/* Hidden file input for upload */}
-        {!useMock && (
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".wav,audio/wav,audio/wave"
-            onChange={handleFileUpload}
-            className="hidden"
-          />
-        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".wav,audio/wav,audio/wave"
+          onChange={handleFileUpload}
+          className="hidden"
+        />
 
         {/* Processing indicator */}
         {isProcessing && (
