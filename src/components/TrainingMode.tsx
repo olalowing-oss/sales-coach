@@ -4,6 +4,13 @@ import { TRAINING_SCENARIOS, type TrainingScenario } from '../data/trainingScena
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
 
+// Azure Speech Configuration
+const SPEECH_CONFIG = {
+  subscriptionKey: import.meta.env.VITE_AZURE_SPEECH_KEY || 'demo-mode',
+  region: import.meta.env.VITE_AZURE_SPEECH_REGION || 'swedencentral',
+  language: 'sv-SE'
+};
+
 interface Message {
   role: 'customer' | 'salesperson';
   content: string;
@@ -36,10 +43,24 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   const [interestLevel, setInterestLevel] = useState(50);
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);
   const [hasSpokenCustomerReply, setHasSpokenCustomerReply] = useState(false);
+  const [transcript, setTranscript] = useState('');
 
-  // Hooks
-  const { transcript, isListening, startListening, stopListening, resetTranscript } = useSpeechRecognition();
+  // Speech recognition hook with proper configuration
+  const speechHookOptions = {
+    ...SPEECH_CONFIG,
+    onFinalResult: (text: string) => {
+      setTranscript(text);
+    },
+    onInterimResult: (text: string) => {
+      setTranscript(text);
+    }
+  };
+
+  const { isListening, startListening, stopListening } = useSpeechRecognition(speechHookOptions);
   const { speak, isSpeaking, stop: stopSpeaking } = useTextToSpeech();
+
+  // Helper to reset transcript
+  const resetTranscript = () => setTranscript('');
 
   const lastTranscriptRef = useRef('');
 
