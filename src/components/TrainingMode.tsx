@@ -42,7 +42,6 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   const [currentFeedback, setCurrentFeedback] = useState<CoachingFeedback | null>(null);
   const [interestLevel, setInterestLevel] = useState(50);
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);
-  const [hasSpokenCustomerReply, setHasSpokenCustomerReply] = useState(false);
   const [transcript, setTranscript] = useState('');
 
   // Speech recognition hook with proper configuration
@@ -88,76 +87,90 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
     }, 500);
   };
 
-  // Handle salesperson's response
-  useEffect(() => {
-    if (!isActive || isPaused || isListening || !transcript) return;
-    if (transcript === lastTranscriptRef.current) return;
+  // Send salesperson's response to AI
+  const sendSalesResponse = async () => {
+    if (!transcript || isWaitingForAI) return;
 
-    const handleSalesResponse = async () => {
-      lastTranscriptRef.current = transcript;
+    // Stop listening
+    stopListening();
 
-      // Add salesperson message
-      const salesMessage: Message = {
-        role: 'salesperson',
-        content: transcript,
-        timestamp: Date.now()
-      };
-      setConversationHistory(prev => [...prev, salesMessage]);
+    const salesText = transcript;
+    lastTranscriptRef.current = salesText;
 
-      // Get AI customer response
-      setIsWaitingForAI(true);
-      try {
-        const response = await fetch('/api/ai-customer', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scenario: selectedScenario,
-            conversationHistory: [...conversationHistory, salesMessage],
-            salesResponse: transcript
-          })
-        });
+    // Add salesperson message
+    const salesMessage: Message = {
+      role: 'salesperson',
+      content: salesText,
+      timestamp: Date.now()
+    };
+    setConversationHistory(prev => [...prev, salesMessage]);
 
-        const data = await response.json();
+    // Reset transcript
+    resetTranscript();
 
-        if (data.success) {
-          setCurrentFeedback(data);
-          setInterestLevel(data.interestLevel);
+    // Get AI customer response
+    setIsWaitingForAI(true);
+    try {
+      const response = await fetch('/api/ai-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scenario: selectedScenario,
+          conversationHistory: [...conversationHistory, salesMessage],
+          salesResponse: salesText
+        })
+      });
 
-          // Speak customer's reply
-          setHasSpokenCustomerReply(false);
-          await speak(data.customerReply);
-          setHasSpokenCustomerReply(true);
+      const data = await response.json();
 
-          // Add customer message
-          setConversationHistory(prev => [...prev, {
-            role: 'customer',
-            content: data.customerReply,
-            timestamp: Date.now()
-          }]);
+      if (data.success) {
+        setCurrentFeedback(data);
+        setInterestLevel(data.interestLevel);
 
-          // Check if conversation should end
-          if (data.shouldEndConversation) {
-            stopTraining();
-            return;
-          }
+        // Speak customer's reply
+        await speak(data.customerReply);
 
-          // Continue listening
-          resetTranscript();
-          setTimeout(() => {
-            startListening();
-          }, 500);
+        // Add customer message
+        setConversationHistory(prev => [...prev, {
+          role: 'customer',
+          content: data.customerReply,
+          timestamp: Date.now()
+        }]);
+
+        // Check if conversation should end
+        if (data.shouldEndConversation) {
+          stopTraining();
+          return;
         }
-      } catch (error) {
-        console.error('AI Customer error:', error);
-      } finally {
-        setIsWaitingForAI(false);
+
+        // Continue listening
+        setTimeout(() => {
+          startListening();
+        }, 500);
+      }
+    } catch (error) {
+      console.error('AI Customer error:', error);
+      // Restart listening on error
+      setTimeout(() => {
+        startListening();
+      }, 500);
+    } finally {
+      setIsWaitingForAI(false);
+    }
+  };
+
+  // Keyboard shortcut: Enter to send response
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Enter' && isListening && transcript && !isWaitingForAI) {
+        e.preventDefault();
+        sendSalesResponse();
       }
     };
 
-    // Debounce - wait for pause in speech
-    const timeout = setTimeout(handleSalesResponse, 2000);
-    return () => clearTimeout(timeout);
-  }, [transcript, isListening, isActive]);
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [isListening, transcript, isWaitingForAI]);
 
   const pauseTraining = () => {
     setIsPaused(true);
@@ -381,9 +394,19 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
         {/* Live transcript */}
         {transcript && isListening && (
           <div className="bg-gray-800 border-t border-gray-700 p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <Mic className="w-4 h-4 text-red-500" />
-              <span className="text-sm text-gray-400">Du säger:</span>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <Mic className="w-4 h-4 text-red-500" />
+                <span className="text-sm text-gray-400">Du säger:</span>
+              </div>
+              <button
+                onClick={sendSalesResponse}
+                disabled={!transcript || isWaitingForAI}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white text-sm rounded-lg transition-colors flex items-center gap-2"
+              >
+                Skicka svar
+                <kbd className="px-1.5 py-0.5 bg-blue-700 rounded text-xs">Enter</kbd>
+              </button>
             </div>
             <p className="text-white">{transcript}</p>
           </div>
