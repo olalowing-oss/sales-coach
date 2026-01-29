@@ -238,6 +238,136 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Inte erkänna komplexiteten i deras krav',
       'Glömma fråga om specifika compliance-krav'
     ]
+  },
+  {
+    id: 'hr-manager-copilot',
+    name: '👥 HR-chef söker effektivitet',
+    difficulty: 'easy',
+    description: 'HR-chef som spenderar för mycket tid på administration. Nyfiken på Copilot för att automatisera rekrytering och onboarding.',
+    personaName: 'Sofia Bergström',
+    personaRole: 'HR-chef',
+    companyName: 'Nordic Consulting Group',
+    companySize: '80 anställda',
+    industry: 'Konsultverksamhet',
+    painPoints: [
+      'Spenderar 60% av tiden på att skriva jobbeskrivningar och mejl',
+      'Svårt att hålla koll på alla kandidater och processer',
+      'Onboarding tar för lång tid - mycket manuellt arbete',
+      'Teamet klagar på att HR-dokument är svåra att hitta'
+    ],
+    budget: '150,000 SEK/år',
+    decisionTimeframe: '2-3 veckor',
+    personality: 'Positiv, stressad, öppen för ny teknik, värdesätter tidsbesparingar, vill se konkreta exempel',
+    objectives: [
+      'Automatisera skrivarbete (jobbeskrivningar, mejl, policies)',
+      'Samla all HR-dokumentation på ett ställe',
+      'Få hjälp med att analysera kandidatdata',
+      'Snabbare onboarding-process'
+    ],
+    competitors: ['Fortsätta manuellt', 'Google Workspace'],
+    openingLine: 'Hej! Jag har hört att Copilot kan hjälpa mig spara tid på skrivarbete. Jag drunknar i mejl och dokument just nu!',
+    successCriteria: [
+      'Ge konkreta exempel på hur Copilot skriver jobbeskrivningar',
+      'Visa hur Copilot i Outlook hanterar mejl',
+      'Demonstrera SharePoint för dokumenthantering',
+      'Nämn Loop för samarbete i HR-teamet',
+      'Räkna på tidsbesparingar (t.ex. 10 timmar/vecka)',
+      'Föreslå en 2-veckors pilot med HR-teamet'
+    ],
+    commonMistakes: [
+      'Fokusera för mycket på tekniska detaljer istället för värde',
+      'Inte fråga om hennes dagliga arbetsflöde',
+      'Glömma nämna ROI och tidsbesparingar',
+      'Inte ge konkreta use cases för HR',
+      'För komplex lösning - hon vill ha det enkelt'
+    ]
+  },
+  {
+    id: 'marketing-manager-productivity',
+    name: '📱 Marknadschef vill bli mer produktiv',
+    difficulty: 'easy',
+    description: 'Kreativ marknadschef som vill fokusera mer på strategi och mindre på admin. Intresserad av AI-verktyg.',
+    personaName: 'Alexander Nordström',
+    personaRole: 'Marknadschef',
+    companyName: 'Bright Marketing Agency',
+    companySize: '25 anställda',
+    industry: 'Marknadsföring',
+    painPoints: [
+      'För mycket tid går till rapporter och sammanfattningar',
+      'Svårt att hålla kreativa teamet synkat',
+      'Behöver snabbare sätt att skapa content-utkast',
+      'Missar deadlines pga administrativt arbete'
+    ],
+    budget: '200,000 SEK/år (har budget för verktyg)',
+    decisionTimeframe: '1-2 veckor (snabba beslut)',
+    personality: 'Kreativ, nyfiken på AI, vill ha quick wins, värderar design och UX, snabba beslut',
+    objectives: [
+      'AI-hjälp för att skriva content-utkast',
+      'Automatisera rapportering och sammanfattningar',
+      'Bättre samarbete med kreativa teamet',
+      'Integration med befintliga verktyg (Adobe, Canva)'
+    ],
+    competitors: ['ChatGPT Plus', 'Notion AI'],
+    openingLine: 'Hallå! Jag använder redan ChatGPT, men funderar på om Microsoft Copilot kan ge mer värde för vårt team?',
+    successCriteria: [
+      'Jämför Copilot med ChatGPT - visa enterprise-fördelar',
+      'Ge exempel på Copilot i PowerPoint för presentationer',
+      'Visa hur Copilot i Word skapar content-utkast',
+      'Nämn integration med Teams för kreativt samarbete',
+      'Diskutera datasäkerhet (viktigare än ChatGPT)',
+      'Föreslå team-licenser med styrning'
+    ],
+    commonMistakes: [
+      'Inte erkänna att ChatGPT är bra',
+      'Inte förklara skillnaden mellan consumer och enterprise AI',
+      'Glömma nämna datasäkerhet och compliance',
+      'För teknisk - han vill ha kreativa use cases',
+      'Inte visa integrationer med M365-appar'
+    ]
+  },
+  {
+    id: 'small-business-modernization',
+    name: '🏢 Småföretagare vill modernisera',
+    difficulty: 'easy',
+    description: 'Småföretagare som fortfarande använder gamla verktyg. Vill ta steget till molnet och bli mer professionell.',
+    personaName: 'Lars Andersson',
+    personaRole: 'VD och grundare',
+    companyName: 'Anderssons Måleri AB',
+    companySize: '12 anställda',
+    industry: 'Bygg och hantverk',
+    painPoints: [
+      'Använder Hotmail och privata Gmail-konton',
+      'Delar filer via USB och mejl',
+      'Inget gemensamt kalendersystem',
+      'Ser oprofessionella ut mot kunder'
+    ],
+    budget: '50,000-80,000 SEK/år',
+    decisionTimeframe: 'Omedelbart om det är enkelt',
+    personality: 'Pragmatisk, inte teknikvän, värderar enkelhet, vill ha professionell image, behöver stöd vid implementation',
+    objectives: [
+      'Professionella mejladresser (@anderssonsmaleri.se)',
+      'Enklare fildelning mellan kontor och projekt',
+      'Gemensam kalender för alla i teamet',
+      'Se mer professionell ut mot kunder'
+    ],
+    competitors: ['Fortsätta som idag', 'Google Workspace'],
+    openingLine: 'Tja! Vi måste nog börja se lite mer proffsiga ut. Alla har ju olika mejladresser nu och det är lite kaos. Kan ni hjälpa oss?',
+    successCriteria: [
+      'Förklara professional email med egen domän',
+      'Visa hur enkelt OneDrive är för fildelning',
+      'Demonstrera gemensam kalender i Outlook',
+      'Nämn Teams för enkel kommunikation på byggen',
+      'Betona enkel setup och migrering',
+      'Erbjud supportpaket för implementation',
+      'Räkna på småföretagspris'
+    ],
+    commonMistakes: [
+      'Prata om avancerade features han inte behöver',
+      'Inte fråga om deras nuvarande sätt att jobba',
+      'Glömma nämna onboarding-support',
+      'För dyrt - visa basic-paket först',
+      'Inte ge exempel från andra småföretag'
+    ]
   }
 ];
 
