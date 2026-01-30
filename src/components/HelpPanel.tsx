@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Phone, GraduationCap, Beaker, Clock, Settings, ChevronRight, Target, Zap } from 'lucide-react';
+import { X, Phone, GraduationCap, Beaker, Clock, Settings, Target } from 'lucide-react';
 
 interface HelpPanelProps {
   onClose: () => void;
