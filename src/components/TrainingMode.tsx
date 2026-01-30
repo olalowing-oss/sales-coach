@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Pause, RotateCcw, Volume2, Mic, Target, TrendingUp } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Volume2, Mic, Target, TrendingUp, Lightbulb, ThumbsUp, AlertCircle, Zap } from 'lucide-react';
 import { type TrainingScenario } from '../data/trainingScenarios';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
@@ -49,6 +49,18 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [coachingLevel, setCoachingLevel] = useState<CoachingLevel>('full');
+  const [showCoachingPanel, setShowCoachingPanel] = useState(true);
+  const [prevInterestLevel, setPrevInterestLevel] = useState(50);
+  const [interestLevelChanged, setInterestLevelChanged] = useState(false);
+  const [feedbackAnimation, setFeedbackAnimation] = useState(false);
+  const [interestTrend, setInterestTrend] = useState<'up' | 'down' | 'neutral'>('neutral');
+
+  // Helper function to get color based on interest level
+  const getInterestColor = (level: number) => {
+    if (level >= 70) return { bg: 'bg-green-600', text: 'text-green-400', border: 'border-green-600', emoji: '😊' };
+    if (level >= 40) return { bg: 'bg-yellow-600', text: 'text-yellow-400', border: 'border-yellow-600', emoji: '😐' };
+    return { bg: 'bg-red-600', text: 'text-red-400', border: 'border-red-600', emoji: '😠' };
+  };
 
   // Speech recognition hook with proper configuration
   const speechHookOptions = {
@@ -74,6 +86,43 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   useEffect(() => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
+
+  // Detect interest level changes and trigger animations
+  useEffect(() => {
+    if (interestLevel !== prevInterestLevel) {
+      setInterestLevelChanged(true);
+
+      // Determine trend
+      if (interestLevel > prevInterestLevel) {
+        setInterestTrend('up');
+      } else if (interestLevel < prevInterestLevel) {
+        setInterestTrend('down');
+      } else {
+        setInterestTrend('neutral');
+      }
+
+      setPrevInterestLevel(interestLevel);
+
+      // Reset animation after 600ms
+      const timer = setTimeout(() => {
+        setInterestLevelChanged(false);
+      }, 600);
+
+      return () => clearTimeout(timer);
+    }
+  }, [interestLevel, prevInterestLevel]);
+
+  // Trigger feedback animation when new feedback arrives
+  useEffect(() => {
+    if (currentFeedback) {
+      setFeedbackAnimation(true);
+      const timer = setTimeout(() => {
+        setFeedbackAnimation(false);
+      }, 600);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentFeedback]);
 
   // Fetch training scenarios directly from Supabase (much faster than API proxy)
   useEffect(() => {
@@ -306,8 +355,56 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   // Render scenario selection
   if (!isActive && !selectedScenario) {
     return (
-      <div className="fixed inset-0 bg-gray-900 z-50 overflow-y-auto">
-        <div className="max-w-7xl mx-auto p-6">
+      <>
+        <style>{`
+          @keyframes pulse-glow {
+            0%, 100% {
+              box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+            }
+            50% {
+              box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3);
+            }
+          }
+
+          @keyframes slide-in-right {
+            from {
+              transform: translateX(20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateX(0);
+              opacity: 1;
+            }
+          }
+
+          @keyframes bounce-in {
+            0% {
+              transform: scale(0.8);
+              opacity: 0;
+            }
+            50% {
+              transform: scale(1.05);
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+            }
+          }
+
+          .interest-pulse {
+            animation: pulse-glow 0.6s ease-out;
+          }
+
+          .feedback-slide {
+            animation: slide-in-right 0.4s ease-out;
+          }
+
+          .bounce-in {
+            animation: bounce-in 0.5s ease-out;
+          }
+        `}</style>
+        <div className="fixed inset-0 bg-gray-900 z-50 overflow-y-auto">
+          <div className="max-w-7xl mx-auto p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -402,11 +499,60 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
           )}
         </div>
       </div>
+      </>
     );
   }
 
   // Render active training session
   return (
+    <>
+      <style>{`
+        @keyframes pulse-glow {
+          0%, 100% {
+            box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7);
+          }
+          50% {
+            box-shadow: 0 0 20px 8px rgba(59, 130, 246, 0.3);
+          }
+        }
+
+        @keyframes slide-in-right {
+          from {
+            transform: translateX(20px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes bounce-in {
+          0% {
+            transform: scale(0.8);
+            opacity: 0;
+          }
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        .interest-pulse {
+          animation: pulse-glow 0.6s ease-out;
+        }
+
+        .feedback-slide {
+          animation: slide-in-right 0.4s ease-out;
+        }
+
+        .bounce-in {
+          animation: bounce-in 0.5s ease-out;
+        }
+      `}</style>
     <div className="fixed inset-0 bg-gray-900 z-50 flex">
       {/* Left: Conversation */}
       <div className="flex-1 flex flex-col">
@@ -426,9 +572,23 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
               <p className="text-sm text-gray-400">{selectedScenario?.personaName} - {selectedScenario?.personaRole}</p>
             </div>
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1 bg-gray-700 rounded-lg">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-white">{interestLevel}% intresse</span>
+              {/* Enhanced Interest Level Indicator */}
+              <div className={`flex items-center gap-3 px-4 py-2 rounded-lg border-2 ${getInterestColor(interestLevel).border} bg-gray-800/50 transition-all duration-500 ${interestLevelChanged ? 'interest-pulse' : ''}`}>
+                <span className="text-2xl">{getInterestColor(interestLevel).emoji}</span>
+                <div className="flex flex-col">
+                  <span className="text-xs text-gray-400 uppercase font-semibold">Kundintresse</span>
+                  <div className="flex items-center gap-2">
+                    <div className="w-24 h-2 bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${getInterestColor(interestLevel).bg} transition-all duration-500`}
+                        style={{ width: `${interestLevel}%` }}
+                      />
+                    </div>
+                    <span className={`text-sm font-bold ${getInterestColor(interestLevel).text}`}>
+                      {interestLevel}%
+                    </span>
+                  </div>
+                </div>
               </div>
               {!isPaused ? (
                 <button
@@ -610,8 +770,14 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
             <>
               {/* What went well - Only for Full level */}
               {coachingLevel === 'full' && currentFeedback.whatWentWell && currentFeedback.whatWentWell.length > 0 && (
-                <div className="bg-green-600/10 border border-green-600/30 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-green-400 mb-2">✅ Bra jobbat!</h4>
+                <div className={`bg-green-600/10 border border-green-600/30 rounded-lg p-4 ${feedbackAnimation ? 'feedback-slide' : ''}`}>
+                  <h4 className="text-sm font-semibold text-green-400 mb-2 flex items-center gap-2">
+                    <ThumbsUp className="w-4 h-4" />
+                    Bra jobbat!
+                    {feedbackAnimation && (
+                      <span className="px-1.5 py-0.5 bg-green-500 text-white text-xs rounded-full animate-pulse">NY</span>
+                    )}
+                  </h4>
                   <ul className="space-y-1">
                     {currentFeedback.whatWentWell.map((item, idx) => (
                       <li key={idx} className="text-sm text-green-300">• {item}</li>
@@ -622,8 +788,14 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
 
               {/* What to improve - For Full and Medium levels */}
               {(coachingLevel === 'full' || coachingLevel === 'medium') && currentFeedback.whatToImprove && currentFeedback.whatToImprove.length > 0 && (
-                <div className="bg-orange-600/10 border border-orange-600/30 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-orange-400 mb-2">💡 Förbättra</h4>
+                <div className={`bg-orange-600/10 border border-orange-600/30 rounded-lg p-4 ${feedbackAnimation ? 'feedback-slide' : ''}`}>
+                  <h4 className="text-sm font-semibold text-orange-400 mb-2 flex items-center gap-2">
+                    <Lightbulb className="w-4 h-4" />
+                    Förbättra
+                    {feedbackAnimation && (
+                      <span className="px-1.5 py-0.5 bg-orange-500 text-white text-xs rounded-full animate-pulse">NY</span>
+                    )}
+                  </h4>
                   <ul className="space-y-1">
                     {currentFeedback.whatToImprove.map((item, idx) => (
                       <li key={idx} className="text-sm text-orange-300">• {item}</li>
@@ -634,16 +806,28 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
 
               {/* Next best action - For Full and Medium levels */}
               {(coachingLevel === 'full' || coachingLevel === 'medium') && currentFeedback.nextBestAction && (
-                <div className="bg-blue-600/10 border border-blue-600/30 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-blue-400 mb-2">🎯 Nästa steg</h4>
+                <div className={`bg-blue-600/10 border border-blue-600/30 rounded-lg p-4 ${feedbackAnimation ? 'feedback-slide' : ''}`}>
+                  <h4 className="text-sm font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                    <Target className="w-4 h-4" />
+                    Nästa steg
+                    {feedbackAnimation && (
+                      <span className="px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded-full animate-pulse">NY</span>
+                    )}
+                  </h4>
                   <p className="text-sm text-blue-300">{currentFeedback.nextBestAction}</p>
                 </div>
               )}
 
               {/* Coaching tips - Only for Full level */}
               {coachingLevel === 'full' && currentFeedback.coachingTips && currentFeedback.coachingTips.length > 0 && (
-                <div className="bg-purple-600/10 border border-purple-600/30 rounded-lg p-4">
-                  <h4 className="text-sm font-semibold text-purple-400 mb-2">💬 Tips</h4>
+                <div className={`bg-purple-600/10 border border-purple-600/30 rounded-lg p-4 ${feedbackAnimation ? 'feedback-slide' : ''}`}>
+                  <h4 className="text-sm font-semibold text-purple-400 mb-2 flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    Tips
+                    {feedbackAnimation && (
+                      <span className="px-1.5 py-0.5 bg-purple-500 text-white text-xs rounded-full animate-pulse">NY</span>
+                    )}
+                  </h4>
                   <ul className="space-y-1">
                     {currentFeedback.coachingTips.map((tip, idx) => (
                       <li key={idx} className="text-sm text-purple-300">• {tip}</li>
@@ -658,8 +842,20 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
                 <div className="space-y-2">
                   <div>
                     <div className="flex justify-between text-xs text-gray-400 mb-1">
-                      <span>Intressenivå</span>
-                      <span>{currentFeedback.interestLevel}%</span>
+                      <span className="flex items-center gap-1">
+                        Intressenivå
+                        {interestTrend === 'up' && (
+                          <TrendingUp className="w-3 h-3 text-green-400" />
+                        )}
+                        {interestTrend === 'down' && (
+                          <TrendingUp className="w-3 h-3 text-red-400 rotate-180" />
+                        )}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        {currentFeedback.interestLevel}%
+                        {interestTrend === 'up' && <span className="text-green-400 text-xs">↑</span>}
+                        {interestTrend === 'down' && <span className="text-red-400 text-xs">↓</span>}
+                      </span>
                     </div>
                     <div className="w-full bg-gray-600 rounded-full h-2">
                       <div
@@ -716,5 +912,6 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
         </div>
       </div>
     </div>
+    </>
   );
 };

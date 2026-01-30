@@ -12,6 +12,7 @@ import { HistoryPanel } from './HistoryPanel';
 import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { TrainingMode } from './TrainingMode';
 import { KundsamtalDropdown } from './KundsamtalDropdown';
+import { Dashboard } from './Dashboard';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDemoScripts } from '../data/demoScripts';
 
@@ -56,11 +57,11 @@ export const SalesCoach: React.FC = () => {
   // Panel visibility toggles (load from localStorage)
   const [showTranscriptPanel, setShowTranscriptPanel] = React.useState(() => {
     const saved = localStorage.getItem('showTranscriptPanel');
-    return saved !== null ? saved === 'true' : true;
+    return saved !== null ? saved === 'true' : false; // Default to false to show Dashboard
   });
   const [showCoachingPanel, setShowCoachingPanel] = React.useState(() => {
     const saved = localStorage.getItem('showCoachingPanel');
-    return saved !== null ? saved === 'true' : true;
+    return saved !== null ? saved === 'true' : false; // Default to false to show Dashboard
   });
   const [selectedScript, setSelectedScript] = React.useState(() => {
     return localStorage.getItem('selectedDemoScript') || 'copilot-success';
@@ -209,14 +210,26 @@ export const SalesCoach: React.FC = () => {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                // Hide panels to show Dashboard
+                setShowTranscriptPanel(false);
+                setShowCoachingPanel(false);
+                localStorage.setItem('showTranscriptPanel', 'false');
+                localStorage.setItem('showCoachingPanel', 'false');
+                // Clear demo mode
+                localStorage.setItem('forceDemoMode', 'false');
+              }}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer"
+              title="Tillbaka till Dashboard"
+            >
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-sm">
                 SC
               </div>
               <h1 className="text-xl font-semibold">Sales Coach AI</h1>
-            </div>
+            </button>
 
-            {useMock && (
+            {useMock && (showTranscriptPanel || showCoachingPanel) && (
               <span className="px-3 py-1 bg-teal-600/20 text-teal-400 text-xs rounded-full">
                 {getAllDemoScripts().find(s => s.id === selectedScript)?.name || 'Demo'}
               </span>
@@ -299,6 +312,9 @@ export const SalesCoach: React.FC = () => {
                           setSelectedScript(e.target.value);
                           localStorage.setItem('selectedDemoScript', e.target.value);
                           localStorage.setItem('forceDemoMode', 'true');
+                          // Show panels for demo
+                          localStorage.setItem('showTranscriptPanel', 'true');
+                          localStorage.setItem('showCoachingPanel', 'true');
                           setShowDemoMenu(false);
                           // Reload för att aktivera demo-läge med rätt hooks
                           window.location.reload();
@@ -546,29 +562,24 @@ export const SalesCoach: React.FC = () => {
           )}
         </div>
 
-        {/* Empty state when both panels are hidden */}
+        {/* Dashboard - shown when both panels are hidden */}
         {!showTranscriptPanel && !showCoachingPanel && (
-          <div className="bg-gray-800 rounded-xl p-12 text-center">
-            <Phone className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-400 mb-2">Välkommen till Sales Coach AI</h3>
-            <p className="text-gray-500 mb-6">
-              Starta ett samtal eller aktivera panelerna för att komma igång.
-            </p>
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={handleToggleTranscript}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Visa transkript
-              </button>
-              <button
-                onClick={handleToggleCoaching}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
-              >
-                Visa coaching
-              </button>
-            </div>
-          </div>
+          <Dashboard
+            onStartTraining={() => setShowTraining(true)}
+            onSelectDemoScript={(scriptId) => {
+              setSelectedScript(scriptId);
+              localStorage.setItem('selectedDemoScript', scriptId);
+              localStorage.setItem('forceDemoMode', 'true');
+              // Show panels for demo
+              setShowTranscriptPanel(true);
+              setShowCoachingPanel(true);
+              localStorage.setItem('showTranscriptPanel', 'true');
+              localStorage.setItem('showCoachingPanel', 'true');
+              // Reload to activate demo mode with correct hooks
+              window.location.reload();
+            }}
+            onOpenHistory={() => setShowHistory(true)}
+          />
         )}
 
         {/* Live Analysis Panel - shown during active call */}
