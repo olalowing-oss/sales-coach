@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Play, Pause, RotateCcw, Volume2, Mic, Target, TrendingUp, Lightbulb, ThumbsUp, AlertCircle, Zap } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Volume2, Mic, Target, TrendingUp, Lightbulb, ThumbsUp, Zap } from 'lucide-react';
 import { type TrainingScenario } from '../data/trainingScenarios';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useTextToSpeech } from '../hooks/useTextToSpeech';
@@ -49,7 +49,6 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   const [isWaitingForAI, setIsWaitingForAI] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [coachingLevel, setCoachingLevel] = useState<CoachingLevel>('full');
-  const [showCoachingPanel, setShowCoachingPanel] = useState(true);
   const [prevInterestLevel, setPrevInterestLevel] = useState(50);
   const [interestLevelChanged, setInterestLevelChanged] = useState(false);
   const [feedbackAnimation, setFeedbackAnimation] = useState(false);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, GraduationCap, Beaker, Clock, TrendingUp, Target, Calendar, ChevronRight, Play } from 'lucide-react';
+import { Phone, GraduationCap, Beaker, Clock, TrendingUp, Target, ChevronRight, Play } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAllDemoScripts } from '../data/demoScripts';
 import { useAuth } from '../contexts/AuthContext';
