@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Phone, GraduationCap, Beaker, Clock, TrendingUp, Target, ChevronRight, Play } from 'lucide-react';
+import { Phone, GraduationCap, Beaker, Clock, Target, ChevronRight, Play } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { getAllDemoScripts } from '../data/demoScripts';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,11 +30,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const [trainingScenarios, setTrainingScenarios] = useState<any[]>([]);
   const [isLoadingCalls, setIsLoadingCalls] = useState(true);
   const [isLoadingScenarios, setIsLoadingScenarios] = useState(true);
-  const [stats, setStats] = useState({
-    totalCalls: 0,
-    totalTraining: 0,
-    avgSentiment: 0
-  });
 
   // Fetch recent calls
   useEffect(() => {
@@ -55,14 +50,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         } else if (data) {
           setRecentCalls(data);
         }
-
-        // Fetch stats
-        const { count: totalCount } = await supabase
-          .from('call_sessions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-
-        setStats(prev => ({ ...prev, totalCalls: totalCount || 0 }));
       } catch (error) {
         console.error('Error:', error);
       } finally {
@@ -151,35 +138,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <p className="text-blue-100">
           Redo att förbättra dina säljfärdigheter? Välj ett alternativ nedan för att komma igång.
         </p>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center gap-3 mb-2">
-            <Phone className="w-5 h-5 text-blue-400" />
-            <span className="text-sm text-gray-400">Totala samtal</span>
-          </div>
-          <p className="text-3xl font-bold text-white">{stats.totalCalls}</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center gap-3 mb-2">
-            <GraduationCap className="w-5 h-5 text-purple-400" />
-            <span className="text-sm text-gray-400">Träningssessioner</span>
-          </div>
-          <p className="text-3xl font-bold text-white">{stats.totalTraining}</p>
-        </div>
-
-        <div className="bg-gray-800 rounded-lg p-6 border border-gray-700">
-          <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-5 h-5 text-green-400" />
-            <span className="text-sm text-gray-400">Framgång</span>
-          </div>
-          <p className="text-3xl font-bold text-white">
-            {stats.avgSentiment > 0 ? `${Math.round(stats.avgSentiment)}%` : '-'}
-          </p>
-        </div>
       </div>
 
       {/* Main Content Grid */}
