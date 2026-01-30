@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Play, Settings, LogOut, User, GraduationCap, Phone, Mic, Square, Pause, Upload, Beaker } from 'lucide-react';
+import { Play, Settings, LogOut, User, GraduationCap, Phone, Mic, Square, Pause, Upload, Beaker, HelpCircle } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
@@ -13,6 +13,7 @@ import { LiveCallAnalysisPanel } from './LiveCallAnalysisPanel';
 import { TrainingMode } from './TrainingMode';
 import { KundsamtalDropdown } from './KundsamtalDropdown';
 import { Dashboard } from './Dashboard';
+import { HelpPanel } from './HelpPanel';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDemoScripts } from '../data/demoScripts';
 
@@ -53,6 +54,7 @@ export const SalesCoach: React.FC = () => {
   const [showTrainingMenu, setShowTrainingMenu] = React.useState(false);
   const [showKundsamtalMenu, setShowKundsamtalMenu] = React.useState(false);
   const [showDemoMenu, setShowDemoMenu] = React.useState(false);
+  const [showHelp, setShowHelp] = React.useState(false);
 
   // Panel visibility toggles (load from localStorage)
   const [showTranscriptPanel, setShowTranscriptPanel] = React.useState(() => {
@@ -405,6 +407,15 @@ export const SalesCoach: React.FC = () => {
               )}
             </div>
 
+            {/* Help button */}
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Hjälp"
+            >
+              <HelpCircle className="w-5 h-5 text-gray-400" />
+            </button>
+
             {/* User menu */}
             <div className="relative">
               <button
@@ -609,6 +620,7 @@ export const SalesCoach: React.FC = () => {
       {showScenariosAdmin && <ScenariosAdmin onClose={() => setShowScenariosAdmin(false)} />}
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
       {showTraining && <TrainingMode onClose={() => setShowTraining(false)} />}
+      {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
     </div>
   );
 };
