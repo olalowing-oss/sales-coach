@@ -22,6 +22,7 @@ export interface TrainingScenario {
   openingLine: string;
   successCriteria: string[];
   commonMistakes: string[];
+  voiceName?: string;
 }
 
 export const TRAINING_SCENARIOS: TrainingScenario[] = [
@@ -64,7 +65,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Inte lyssna på deras specifika pain points',
       'För lång säljcykel - de vill ha snabba svar',
       'Glömma fråga om tekniska krav'
-    ]
+    ],
+    voiceName: 'sv-SE-SofieNeural'
   },
   {
     id: 'skeptical-cto',
@@ -106,7 +108,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Inte hantera konkurrentjämförelse professionellt',
       'Pusha för snabb closing - han behöver tid',
       'Inte ge konkreta bevis och referenser'
-    ]
+    ],
+    voiceName: 'sv-SE-MattiasNeural'
   },
   {
     id: 'price-focused-procurement',
@@ -149,7 +152,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Inte ställa frågor om cost of doing nothing',
       'Jämföra äpplen med päron (Basic vs Premium)',
       'Inte räkna in mjuka värden (support, säkerhet, uptime)'
-    ]
+    ],
+    voiceName: 'sv-SE-MattiasNeural'
   },
   {
     id: 'busy-it-manager',
@@ -192,7 +196,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Inte ge konkreta nästa steg',
       'Glömma fråga om specifikt smärtpunkt',
       'Inte erbjuda snabb pilot/POC'
-    ]
+    ],
+    voiceName: 'sv-SE-SofieNeural'
   },
   {
     id: 'compliance-officer',
@@ -237,7 +242,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Pusha för snabb closing',
       'Inte erkänna komplexiteten i deras krav',
       'Glömma fråga om specifika compliance-krav'
-    ]
+    ],
+    voiceName: 'sv-SE-HilleviNeural'
   },
   {
     id: 'hr-manager-copilot',
@@ -280,7 +286,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Glömma nämna ROI och tidsbesparingar',
       'Inte ge konkreta use cases för HR',
       'För komplex lösning - hon vill ha det enkelt'
-    ]
+    ],
+    voiceName: 'sv-SE-SofieNeural'
   },
   {
     id: 'marketing-manager-productivity',
@@ -323,7 +330,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Glömma nämna datasäkerhet och compliance',
       'För teknisk - han vill ha kreativa use cases',
       'Inte visa integrationer med M365-appar'
-    ]
+    ],
+    voiceName: 'sv-SE-MattiasNeural'
   },
   {
     id: 'small-business-modernization',
@@ -367,7 +375,8 @@ export const TRAINING_SCENARIOS: TrainingScenario[] = [
       'Glömma nämna onboarding-support',
       'För dyrt - visa basic-paket först',
       'Inte ge exempel från andra småföretag'
-    ]
+    ],
+    voiceName: 'sv-SE-MattiasNeural'
   }
 ];
 

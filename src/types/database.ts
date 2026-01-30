@@ -421,6 +421,7 @@ export interface Database {
           success_criteria: string[]
           common_mistakes: string[]
           is_global: boolean
+          voice_name: string | null
           created_at: string
           updated_at: string
         }
@@ -445,6 +446,7 @@ export interface Database {
           success_criteria: string[]
           common_mistakes: string[]
           is_global?: boolean
+          voice_name?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -469,6 +471,7 @@ export interface Database {
           success_criteria?: string[]
           common_mistakes?: string[]
           is_global?: boolean
+          voice_name?: string | null
           created_at?: string
           updated_at?: string
         }

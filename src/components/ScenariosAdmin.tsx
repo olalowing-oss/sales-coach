@@ -52,7 +52,8 @@ export const ScenariosAdmin: React.FC<ScenariosAdminProps> = ({ onClose }) => {
           competitors: scenario.competitors,
           openingLine: scenario.opening_line,
           successCriteria: scenario.success_criteria,
-          commonMistakes: scenario.common_mistakes
+          commonMistakes: scenario.common_mistakes,
+          voiceName: scenario.voice_name
         }));
         setScenarios(transformedScenarios);
       }
@@ -84,7 +85,8 @@ export const ScenariosAdmin: React.FC<ScenariosAdminProps> = ({ onClose }) => {
       competitors: [],
       openingLine: '',
       successCriteria: [],
-      commonMistakes: []
+      commonMistakes: [],
+      voiceName: 'sv-SE-SofieNeural'
     });
   };
 
@@ -99,9 +101,7 @@ export const ScenariosAdmin: React.FC<ScenariosAdminProps> = ({ onClose }) => {
       }
 
       // Convert camelCase to snake_case for database
-      const dbScenario = {
-        id: editingScenario.id,
-        user_id: user.id,
+      const dbScenario: any = {
         name: editingScenario.name,
         difficulty: editingScenario.difficulty,
         description: editingScenario.description,
@@ -119,18 +119,22 @@ export const ScenariosAdmin: React.FC<ScenariosAdminProps> = ({ onClose }) => {
         opening_line: editingScenario.openingLine,
         success_criteria: editingScenario.successCriteria,
         common_mistakes: editingScenario.commonMistakes,
-        is_global: false
+        voice_name: editingScenario.voiceName || 'sv-SE-SofieNeural'
       };
 
       let result;
       if (isCreating) {
-        // Insert new scenario
+        // Insert new scenario - include id and user_id
+        dbScenario.id = editingScenario.id;
+        dbScenario.user_id = user.id;
+        dbScenario.is_global = false;
+
         result = await supabase
           .from('training_scenarios')
           .insert(dbScenario)
           .select();
       } else {
-        // Update existing scenario
+        // Update existing scenario - don't change id, user_id, or is_global
         result = await supabase
           .from('training_scenarios')
           .update(dbScenario)
@@ -356,6 +360,19 @@ export const ScenariosAdmin: React.FC<ScenariosAdminProps> = ({ onClose }) => {
                 className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg"
                 rows={2}
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Röst</label>
+              <select
+                value={editingScenario.voiceName || 'sv-SE-SofieNeural'}
+                onChange={(e) => setEditingScenario({ ...editingScenario, voiceName: e.target.value })}
+                className="w-full px-3 py-2 bg-gray-700 text-white rounded-lg"
+              >
+                <option value="sv-SE-SofieNeural">Sofie (Kvinna, vänlig)</option>
+                <option value="sv-SE-HilleviNeural">Hillevi (Kvinna, tydlig)</option>
+                <option value="sv-SE-MattiasNeural">Mattias (Man, professionell)</option>
+              </select>
             </div>
 
             <div>

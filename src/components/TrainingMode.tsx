@@ -108,7 +108,8 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
             competitors: scenario.competitors,
             openingLine: scenario.opening_line,
             successCriteria: scenario.success_criteria,
-            commonMistakes: scenario.common_mistakes
+            commonMistakes: scenario.common_mistakes,
+            voiceName: scenario.voice_name
           }));
           setScenarios(transformedScenarios);
         }
@@ -131,7 +132,7 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
     setInterestLevel(50);
 
     // AI Customer speaks first
-    await speak(scenario.openingLine);
+    await speak(scenario.openingLine, { voice: scenario.voiceName });
 
     // Add to history
     setConversationHistory([{
@@ -191,7 +192,7 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
         setInterestLevel(quickData.interestLevel);
 
         // Speak customer's reply
-        await speak(quickData.customerReply);
+        await speak(quickData.customerReply, { voice: selectedScenario?.voiceName });
 
         // Add customer message
         setConversationHistory(prev => [...prev, {
@@ -261,12 +262,17 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   }, [isListening, transcript, isWaitingForAI]);
 
   const pauseTraining = () => {
+    console.log('🟡 Pausar träning...');
+    console.log('   - isListening:', isListening);
+    console.log('   - isSpeaking:', isSpeaking);
     setIsPaused(true);
     stopListening();
     stopSpeaking();
+    console.log('   ✅ Paus klar');
   };
 
   const resumeTraining = () => {
+    console.log('🟢 Återupptar träning...');
     setIsPaused(false);
     // Only start listening if AI is not speaking or waiting
     if (!isSpeaking && !isWaitingForAI) {
@@ -275,14 +281,19 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   };
 
   const stopTraining = () => {
+    console.log('🔴 Stoppar träning...');
+    stopListening();
+    stopSpeaking();
     setIsActive(false);
     setIsPaused(false);
     setSelectedScenario(null);
-    stopListening();
-    stopSpeaking();
     resetTranscript();
     setConversationHistory([]);
     setCurrentFeedback(null);
+
+    // Close the entire training mode and go back to main menu
+    console.log('🚪 Stänger träningsmodulen...');
+    onClose();
   };
 
   const restartTraining = () => {
@@ -401,6 +412,14 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
       <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="bg-gray-800 border-b border-gray-700 p-4">
+          {/* Pause indicator */}
+          {isPaused && (
+            <div className="mb-3 px-4 py-2 bg-yellow-600/20 border border-yellow-600/50 rounded-lg flex items-center gap-2">
+              <Pause className="w-4 h-4 text-yellow-400" />
+              <span className="text-sm text-yellow-400 font-medium">Träningen är pausad</span>
+            </div>
+          )}
+
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-semibold text-white">{selectedScenario?.name}</h2>
@@ -413,28 +432,52 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
               </div>
               {!isPaused ? (
                 <button
-                  onClick={pauseTraining}
-                  className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg"
+                  onClick={(e) => {
+                    console.log('🔘 PAUS-KNAPP KLICKAD!', e);
+                    pauseTraining();
+                  }}
+                  className="p-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors"
+                  title="Pausa träningen"
+                  aria-label="Pausa träningen"
+                  style={{ position: 'relative', zIndex: 100 }}
                 >
                   <Pause size={18} />
                 </button>
               ) : (
                 <button
-                  onClick={resumeTraining}
-                  className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                  onClick={(e) => {
+                    console.log('🔘 ÅTERUPPTA-KNAPP KLICKAD!', e);
+                    resumeTraining();
+                  }}
+                  className="p-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+                  title="Återuppta träningen"
+                  aria-label="Återuppta träningen"
+                  style={{ position: 'relative', zIndex: 100 }}
                 >
                   <Play size={18} />
                 </button>
               )}
               <button
-                onClick={restartTraining}
-                className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg"
+                onClick={(e) => {
+                  console.log('🔘 STARTA OM-KNAPP KLICKAD!', e);
+                  restartTraining();
+                }}
+                className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors"
+                title="Starta om träningen"
+                aria-label="Starta om träningen"
+                style={{ position: 'relative', zIndex: 100 }}
               >
                 <RotateCcw size={18} />
               </button>
               <button
-                onClick={stopTraining}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                onClick={(e) => {
+                  console.log('🔘 AVSLUTA-KNAPP KLICKAD!', e);
+                  stopTraining();
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                title="Avsluta träningen"
+                aria-label="Avsluta träningen"
+                style={{ position: 'relative', zIndex: 100 }}
               >
                 Avsluta
               </button>
