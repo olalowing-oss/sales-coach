@@ -253,6 +253,15 @@ export const SalesCoach: React.FC = () => {
               <span className="text-sm text-red-400">{speechError}</span>
             )}
 
+            {/* Help button */}
+            <button
+              onClick={() => setShowHelp(true)}
+              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+              title="Hjälp"
+            >
+              <HelpCircle className="w-5 h-5 text-gray-400" />
+            </button>
+
             {/* Samtal menu with dropdown */}
             <div className="relative">
               <button
@@ -406,15 +415,6 @@ export const SalesCoach: React.FC = () => {
                 </>
               )}
             </div>
-
-            {/* Help button */}
-            <button
-              onClick={() => setShowHelp(true)}
-              className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-              title="Hjälp"
-            >
-              <HelpCircle className="w-5 h-5 text-gray-400" />
-            </button>
 
             {/* User menu */}
             <div className="relative">
