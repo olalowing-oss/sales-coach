@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { Play, Settings, LogOut, User, GraduationCap, Phone, Mic, Square, Pause, Upload, Beaker, HelpCircle } from 'lucide-react';
+import { Play, Settings, LogOut, User, GraduationCap, Phone, Mic, Square, Pause, Upload, Beaker, HelpCircle, Database } from 'lucide-react';
 import { useSessionStore } from '../store/sessionStore';
 import { useSpeechRecognition, useMockSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useAudioFileTranscription } from '../hooks/useAudioFileTranscription';
@@ -14,6 +14,7 @@ import { TrainingMode } from './TrainingMode';
 import { KundsamtalDropdown } from './KundsamtalDropdown';
 import { Dashboard } from './Dashboard';
 import { HelpPanel } from './HelpPanel';
+import { KnowledgeBaseManager } from './KnowledgeBaseManager';
 import { useAuth } from '../contexts/AuthContext';
 import { getAllDemoScripts } from '../data/demoScripts';
 
@@ -55,6 +56,7 @@ export const SalesCoach: React.FC = () => {
   const [showKundsamtalMenu, setShowKundsamtalMenu] = React.useState(false);
   const [showDemoMenu, setShowDemoMenu] = React.useState(false);
   const [showHelp, setShowHelp] = React.useState(false);
+  const [showKnowledgeBase, setShowKnowledgeBase] = React.useState(false);
 
   // Panel visibility toggles (load from localStorage)
   const [showTranscriptPanel, setShowTranscriptPanel] = React.useState(() => {
@@ -403,12 +405,26 @@ export const SalesCoach: React.FC = () => {
                         setShowScenariosAdmin(true);
                         setShowTrainingMenu(false);
                       }}
-                      className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3"
+                      className="w-full px-4 py-3 text-left hover:bg-gray-700 transition-colors flex items-center gap-3"
                     >
                       <Settings className="w-4 h-4 text-gray-400" />
                       <div>
                         <div className="text-sm font-medium text-white">Hantera scenarier</div>
                         <div className="text-xs text-gray-400">Skapa och redigera</div>
+                      </div>
+                    </button>
+                    <div className="border-t border-gray-700" />
+                    <button
+                      onClick={() => {
+                        setShowKnowledgeBase(true);
+                        setShowTrainingMenu(false);
+                      }}
+                      className="w-full px-4 py-3 text-left hover:bg-gray-700 rounded-b-lg transition-colors flex items-center gap-3"
+                    >
+                      <Database className="w-4 h-4 text-blue-400" />
+                      <div>
+                        <div className="text-sm font-medium text-white">Kunskapsbas</div>
+                        <div className="text-xs text-gray-400">Ladda upp material för AI</div>
                       </div>
                     </button>
                   </div>
@@ -621,6 +637,7 @@ export const SalesCoach: React.FC = () => {
       {showHistory && <HistoryPanel onClose={() => setShowHistory(false)} />}
       {showTraining && <TrainingMode onClose={() => setShowTraining(false)} />}
       {showHelp && <HelpPanel onClose={() => setShowHelp(false)} />}
+      {showKnowledgeBase && <KnowledgeBaseManager onClose={() => setShowKnowledgeBase(false)} />}
     </div>
   );
 };
