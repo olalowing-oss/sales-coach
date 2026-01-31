@@ -85,6 +85,28 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onCl
     }
   };
 
+  const processDocument = async (documentId: string) => {
+    try {
+      const response = await fetch('/api/process-document', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ documentId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process document');
+      }
+
+      const result = await response.json();
+      console.log('Document processed:', result);
+    } catch (error) {
+      console.error('Error processing document:', error);
+      // Don't throw - let the document stay in pending state
+    }
+  };
+
   const handleFileUpload = async (files: File[]) => {
     if (!selectedProduct) {
       setUploadStatus({
@@ -122,11 +144,18 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onCl
           uploaded_by: user?.id,
         };
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from('knowledge_base')
-          .insert([entry]);
+          .insert([entry])
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Trigger processing in background
+        if (data) {
+          processDocument(data.id);
+        }
 
         // Update progress
         const progress = Math.round(((i + 1) / files.length) * 100);
@@ -191,11 +220,18 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onCl
         uploaded_by: user?.id,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('knowledge_base')
-        .insert([entry]);
+        .insert([entry])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Trigger processing in background
+      if (data) {
+        processDocument(data.id);
+      }
 
       setUploadStatus({
         uploading: false,
@@ -245,11 +281,18 @@ export const KnowledgeBaseManager: React.FC<KnowledgeBaseManagerProps> = ({ onCl
         uploaded_by: user?.id,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('knowledge_base')
-        .insert([entry]);
+        .insert([entry])
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Trigger processing in background
+      if (data) {
+        processDocument(data.id);
+      }
 
       setUploadStatus({
         uploading: false,
