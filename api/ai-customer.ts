@@ -1,9 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
 
 /**
- * Vercel Function: AI Customer Persona Engine
+ * Vercel Function: AI Customer Persona Engine with RAG
  * Generates realistic customer responses for sales training
+ * Uses knowledge base retrieval for accurate product information
  */
 
 interface Message {
@@ -26,6 +28,14 @@ interface TrainingScenario {
   competitors: string[];
 }
 
+interface KnowledgeDocument {
+  id: string;
+  product_id: string;
+  title: string;
+  content: string;
+  similarity: number;
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -46,15 +56,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(500).json({ error: 'Server configuration error' });
   }
 
+  // Initialize Supabase client for RAG
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
   try {
     const {
       scenario,
       conversationHistory = [],
-      salesResponse
+      salesResponse,
+      productId  // Optional: enables RAG if provided
     }: {
       scenario: TrainingScenario;
       conversationHistory: Message[];
       salesResponse: string;
+      productId?: string;
     } = req.body;
 
     if (!scenario || !salesResponse) {
@@ -62,6 +79,43 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const client = new OpenAI({ apiKey });
+
+    // RAG: Retrieve relevant knowledge base documents if productId provided
+    let knowledgeContext = '';
+    let sources: KnowledgeDocument[] = [];
+
+    if (productId) {
+      try {
+        // Generate embedding for the sales response (query)
+        const embeddingResponse = await client.embeddings.create({
+          model: 'text-embedding-ada-002',
+          input: salesResponse.slice(0, 8000),
+        });
+
+        const queryEmbedding = embeddingResponse.data[0].embedding;
+
+        // Call match_knowledge_base function to retrieve relevant documents
+        const { data: matchedDocs, error: matchError } = await supabase.rpc('match_knowledge_base', {
+          query_embedding: queryEmbedding,
+          match_threshold: 0.7,
+          match_count: 3,
+          filter_product_id: productId
+        });
+
+        if (!matchError && matchedDocs && matchedDocs.length > 0) {
+          sources = matchedDocs;
+
+          // Build knowledge context from retrieved documents
+          knowledgeContext = '\n\nPRODUKTINFORMATION (från kunskapsbas):\n' +
+            matchedDocs.map((doc: KnowledgeDocument, idx: number) =>
+              `[${idx + 1}] ${doc.title}:\n${doc.content.slice(0, 500)}...`
+            ).join('\n\n');
+        }
+      } catch (ragError) {
+        console.error('RAG error (non-fatal):', ragError);
+        // Continue without RAG if it fails
+      }
+    }
 
     // Build conversation context (only last 5 messages for speed)
     const recentHistory = conversationHistory.slice(-5);
@@ -75,7 +129,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages: [
         {
           role: 'system',
-          content: `Du är en AI-driven träningskund för säljare som säljer Microsoft-lösningar.
+          content: `Du är en AI-driven träningskund för säljare.
 
 PERSONA:
 Namn: ${scenario.personaName}
@@ -91,6 +145,7 @@ Budget: ${scenario.budget}
 Beslutshorisonten: ${scenario.decisionTimeframe}
 Mål för samtalet: ${scenario.objectives.join(', ')}
 Konkurrenter du känner till: ${scenario.competitors.join(', ')}
+${knowledgeContext}
 
 DIN UPPGIFT:
 1. Agera som denna kund på ett realistiskt sätt
@@ -103,12 +158,14 @@ DIN UPPGIFT:
 8. Visa känslor: nyfikenhet, skepticism, entusiasm baserat på personlighet
 9. Ge köpsignaler när säljaren gör bra arbete
 10. Eskalera invändningar om säljaren missar viktiga punkter
+${knowledgeContext ? '11. Använd produktinformation från kunskapsbasen när säljaren frågar om detaljer\n12. Ställ specifika frågor baserat på produktinformation du har läst' : ''}
 
 SAMTALSSTIL:
 - Kort och naturligt (1-3 meningar vanligtvis)
 - Ställ motfrågor istället för att bara svara
 - Visa ditt humör och din personlighet
 - Var inte för "snäll" - utmana säljaren
+${knowledgeContext ? '- Referera till specifika produktdetaljer när det är relevant' : ''}
 
 PROGRESS:
 - Börja skeptisk/neutral
@@ -207,7 +264,12 @@ Generera kundens nästa replik och coaching-feedback.`
 
     return res.status(200).json({
       success: true,
-      ...result
+      ...result,
+      sources: sources.map(doc => ({
+        id: doc.id,
+        title: doc.title,
+        similarity: doc.similarity
+      }))
     });
 
   } catch (error: any) {

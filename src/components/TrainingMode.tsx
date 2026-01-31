@@ -157,7 +157,8 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
             openingLine: scenario.opening_line,
             successCriteria: scenario.success_criteria,
             commonMistakes: scenario.common_mistakes,
-            voiceName: scenario.voice_name
+            voiceName: scenario.voice_name,
+            productId: scenario.product_id // For RAG integration
           }));
           setScenarios(transformedScenarios);
         }
@@ -222,7 +223,8 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
     const requestData = {
       scenario: selectedScenario,
       conversationHistory: [...conversationHistory, salesMessage],
-      salesResponse: salesText
+      salesResponse: salesText,
+      productId: selectedScenario?.productId // Optional: enables RAG if set
     };
 
     try {

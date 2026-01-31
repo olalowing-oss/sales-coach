@@ -23,6 +23,7 @@ export interface TrainingScenario {
   successCriteria: string[];
   commonMistakes: string[];
   voiceName?: string;
+  productId?: string; // Optional: enables RAG when set
 }
 
 export const TRAINING_SCENARIOS: TrainingScenario[] = [
