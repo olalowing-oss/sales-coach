@@ -399,6 +399,151 @@ export interface Database {
         }
         Relationships: []
       }
+      product_profiles: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          industry: string | null
+          target_audience: string | null
+          key_features: Json
+          value_propositions: Json
+          common_objections: Json
+          pricing_model: string | null
+          pricing_details: Json | null
+          logo_url: string | null
+          website_url: string | null
+          metadata: Json
+          organization_id: string | null
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          industry?: string | null
+          target_audience?: string | null
+          key_features?: Json
+          value_propositions?: Json
+          common_objections?: Json
+          pricing_model?: string | null
+          pricing_details?: Json | null
+          logo_url?: string | null
+          website_url?: string | null
+          metadata?: Json
+          organization_id?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          industry?: string | null
+          target_audience?: string | null
+          key_features?: Json
+          value_propositions?: Json
+          common_objections?: Json
+          pricing_model?: string | null
+          pricing_details?: Json | null
+          logo_url?: string | null
+          website_url?: string | null
+          metadata?: Json
+          organization_id?: string | null
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      knowledge_base: {
+        Row: {
+          id: string
+          product_id: string | null
+          source_type: 'pdf' | 'docx' | 'url' | 'text' | 'other'
+          source_url: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          title: string | null
+          content: string | null
+          processed_content: string | null
+          summary: string | null
+          embedding: string | null
+          chunk_index: number
+          total_chunks: number
+          parent_document_id: string | null
+          metadata: Json
+          processing_status: 'pending' | 'processing' | 'completed' | 'failed'
+          processing_error: string | null
+          uploaded_by: string | null
+          created_at: string
+          updated_at: string
+          processed_at: string | null
+        }
+        Insert: {
+          id?: string
+          product_id?: string | null
+          source_type: 'pdf' | 'docx' | 'url' | 'text' | 'other'
+          source_url?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          title?: string | null
+          content?: string | null
+          processed_content?: string | null
+          summary?: string | null
+          embedding?: string | null
+          chunk_index?: number
+          total_chunks?: number
+          parent_document_id?: string | null
+          metadata?: Json
+          processing_status?: 'pending' | 'processing' | 'completed' | 'failed'
+          processing_error?: string | null
+          uploaded_by?: string | null
+          created_at?: string
+          updated_at?: string
+          processed_at?: string | null
+        }
+        Update: {
+          id?: string
+          product_id?: string | null
+          source_type?: 'pdf' | 'docx' | 'url' | 'text' | 'other'
+          source_url?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          title?: string | null
+          content?: string | null
+          processed_content?: string | null
+          summary?: string | null
+          embedding?: string | null
+          chunk_index?: number
+          total_chunks?: number
+          parent_document_id?: string | null
+          metadata?: Json
+          processing_status?: 'pending' | 'processing' | 'completed' | 'failed'
+          processing_error?: string | null
+          uploaded_by?: string | null
+          created_at?: string
+          updated_at?: string
+          processed_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_product_id_fkey"
+            columns: ["product_id"]
+            referencedRelation: "product_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_base_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       training_scenarios: {
         Row: {
           id: string
@@ -422,6 +567,11 @@ export interface Database {
           common_mistakes: string[]
           is_global: boolean
           voice_name: string | null
+          product_id: string | null
+          auto_generated: boolean
+          knowledge_base_refs: Json
+          generation_prompt: string | null
+          generation_metadata: Json
           created_at: string
           updated_at: string
         }
@@ -447,6 +597,11 @@ export interface Database {
           common_mistakes: string[]
           is_global?: boolean
           voice_name?: string | null
+          product_id?: string | null
+          auto_generated?: boolean
+          knowledge_base_refs?: Json
+          generation_prompt?: string | null
+          generation_metadata?: Json
           created_at?: string
           updated_at?: string
         }
@@ -472,6 +627,11 @@ export interface Database {
           common_mistakes?: string[]
           is_global?: boolean
           voice_name?: string | null
+          product_id?: string | null
+          auto_generated?: boolean
+          knowledge_base_refs?: Json
+          generation_prompt?: string | null
+          generation_metadata?: Json
           created_at?: string
           updated_at?: string
         }
