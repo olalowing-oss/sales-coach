@@ -1,6 +1,7 @@
 {
-  "name": "b3-sales-coach",
+  "name": "b3-sales-platform",
   "version": "0.1.0",
+  "description": "AI Sales Training Platform - Multi-product version with material upload and auto-generation",
   "private": true,
   "type": "module",
   "scripts": {
