@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Edit2, Trash2, Package, Save, Building, Target, DollarSign, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../types/database';
 
 type ProductProfile = Database['public']['Tables']['product_profiles']['Row'];
@@ -17,6 +18,7 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
   onSelectProduct,
   selectedProductId
 }) => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<ProductProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +98,11 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
       return;
     }
 
+    if (!user) {
+      setError('Du måste vara inloggad för att skapa produkter');
+      return;
+    }
+
     setError(null);
     try {
       if (editingProduct) {
@@ -107,10 +114,15 @@ export const ProductManager: React.FC<ProductManagerProps> = ({
 
         if (updateError) throw updateError;
       } else {
-        // Create new product
+        // Create new product - set user_id to current user
+        const productData: ProductInsert = {
+          ...formData,
+          user_id: user.id,
+        } as ProductInsert;
+
         const { error: insertError } = await supabase
           .from('product_profiles')
-          .insert([formData as ProductInsert]);
+          .insert([productData]);
 
         if (insertError) throw insertError;
       }
