@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { X, Calendar, Clock, TrendingUp, TrendingDown, Minus, Trash2, Eye, Sparkles, CheckCircle } from 'lucide-react';
 import { loadSessionsFromDb, deleteSessionFromDb, saveSessionAnalysisToDb } from '../lib/supabaseOperations';
 import { CallAnalysisModal } from './CallAnalysisModal';
+import { MeetingAssistantHistoryCard } from './MeetingAssistantHistoryCard';
 import type { Database } from '../types/database';
 import type { CallAnalysis } from '../types';
+import type { MeetingSummary } from '../lib/meetingAI';
 
 type DbSession = Database['public']['Tables']['call_sessions']['Row'];
 
@@ -114,6 +116,26 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
       analyzedAt: session.analyzed_at ? new Date(session.analyzed_at) : undefined,
       isAnalyzed: session.is_analyzed || false
     };
+  };
+
+  const getMeetingAssistantSummary = (session: DbSession): MeetingSummary | null => {
+    if (!session.ai_summary) return null;
+
+    try {
+      const parsed = typeof session.ai_summary === 'string'
+        ? JSON.parse(session.ai_summary)
+        : session.ai_summary;
+
+      // Check if it has Meeting Assistant structure
+      if (parsed.overview && parsed.qualification && parsed.dealScore !== undefined) {
+        return parsed as MeetingSummary;
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Failed to parse Meeting Assistant summary:', error);
+      return null;
+    }
   };
 
   return (
@@ -230,57 +252,76 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({ onClose }) => {
                       </div>
                     </div>
 
-                    {/* Analysis summary (if analyzed) */}
-                    {session.is_analyzed && (
-                      <div className="mt-4 p-4 bg-gray-900/50 rounded-lg space-y-3">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          {session.call_purpose && (
-                            <div>
-                              <span className="text-gray-500">Syfte:</span>
-                              <span className="text-white ml-2">{session.call_purpose}</span>
-                            </div>
-                          )}
-                          {session.call_outcome && (
-                            <div>
-                              <span className="text-gray-500">Resultat:</span>
-                              <span className="text-white ml-2">{session.call_outcome}</span>
-                            </div>
-                          )}
-                          {session.interest_level && (
-                            <div>
-                              <span className="text-gray-500">Intresse:</span>
-                              <span className={`ml-2 ${
-                                session.interest_level === 'Hög' ? 'text-green-400' :
-                                session.interest_level === 'Medel' ? 'text-yellow-400' :
-                                'text-red-400'
-                              }`}>
-                                {session.interest_level}
-                              </span>
-                            </div>
-                          )}
-                          {session.estimated_value && (
-                            <div>
-                              <span className="text-gray-500">Värde:</span>
-                              <span className="text-white ml-2">{session.estimated_value.toLocaleString('sv-SE')} SEK</span>
-                            </div>
-                          )}
-                        </div>
+                    {/* Meeting Assistant summary (if from Meeting Assistant) */}
+                    {(() => {
+                      const meetingSummary = getMeetingAssistantSummary(session);
+                      if (meetingSummary) {
+                        return (
+                          <MeetingAssistantHistoryCard
+                            summary={meetingSummary}
+                            startedAt={session.started_at}
+                            formatDuration={formatDuration}
+                            formatDate={formatDate}
+                          />
+                        );
+                      }
 
-                        {session.next_steps && (
-                          <div className="text-sm">
-                            <span className="text-gray-500">Nästa steg:</span>
-                            <p className="text-gray-300 mt-1">{session.next_steps}</p>
-                          </div>
-                        )}
+                      // Standard analysis summary (if analyzed but not from Meeting Assistant)
+                      if (session.is_analyzed) {
+                        return (
+                          <div className="mt-4 p-4 bg-gray-900/50 rounded-lg space-y-3">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              {session.call_purpose && (
+                                <div>
+                                  <span className="text-gray-500">Syfte:</span>
+                                  <span className="text-white ml-2">{session.call_purpose}</span>
+                                </div>
+                              )}
+                              {session.call_outcome && (
+                                <div>
+                                  <span className="text-gray-500">Resultat:</span>
+                                  <span className="text-white ml-2">{session.call_outcome}</span>
+                                </div>
+                              )}
+                              {session.interest_level && (
+                                <div>
+                                  <span className="text-gray-500">Intresse:</span>
+                                  <span className={`ml-2 ${
+                                    session.interest_level === 'Hög' ? 'text-green-400' :
+                                    session.interest_level === 'Medel' ? 'text-yellow-400' :
+                                    'text-red-400'
+                                  }`}>
+                                    {session.interest_level}
+                                  </span>
+                                </div>
+                              )}
+                              {session.estimated_value && (
+                                <div>
+                                  <span className="text-gray-500">Värde:</span>
+                                  <span className="text-white ml-2">{session.estimated_value.toLocaleString('sv-SE')} SEK</span>
+                                </div>
+                              )}
+                            </div>
 
-                        {session.follow_up_date && (
-                          <div className="text-sm">
-                            <span className="text-gray-500">Uppföljning:</span>
-                            <span className="text-white ml-2">{formatDate(session.follow_up_date)}</span>
+                            {session.next_steps && (
+                              <div className="text-sm">
+                                <span className="text-gray-500">Nästa steg:</span>
+                                <p className="text-gray-300 mt-1">{session.next_steps}</p>
+                              </div>
+                            )}
+
+                            {session.follow_up_date && (
+                              <div className="text-sm">
+                                <span className="text-gray-500">Uppföljning:</span>
+                                <span className="text-white ml-2">{formatDate(session.follow_up_date)}</span>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
-                    )}
+                        );
+                      }
+
+                      return null;
+                    })()}
 
                     {/* Topics */}
                     {session.topics && session.topics.length > 0 && (
