@@ -433,25 +433,32 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       await useCoachingStore.getState().initializeFromDb();
     }
 
-    const client = new GatewayClient({
-      url: gatewayUrl,
-      authToken,
-      userId,
-      debug: import.meta.env.DEV,
-    });
+    // Gateway is not yet deployed - disable for now
+    // TODO: Enable when gateway server is running
+    const GATEWAY_ENABLED = false;
 
-    // Setup event handlers
-    client.on('connected', () => {
-      console.log('✅ Gateway connected');
-      set({ isGatewayConnected: true });
-    });
+    let client: GatewayClient | null = null;
 
-    client.on('disconnect', () => {
-      console.log('🔌 Gateway disconnected');
-      set({ isGatewayConnected: false });
-    });
+    if (GATEWAY_ENABLED) {
+      client = new GatewayClient({
+        url: gatewayUrl,
+        authToken,
+        userId,
+        debug: import.meta.env.DEV,
+      });
 
-    client.on('session.started', (payload) => {
+      // Setup event handlers
+      client.on('connected', () => {
+        console.log('✅ Gateway connected');
+        set({ isGatewayConnected: true });
+      });
+
+      client.on('disconnect', () => {
+        console.log('🔌 Gateway disconnected');
+        set({ isGatewayConnected: false });
+      });
+
+      client.on('session.started', (payload) => {
       console.log('📝 Gateway session started:', payload.sessionId);
       const { session } = get();
       if (session) {
@@ -567,19 +574,27 @@ export const useSessionStore = create<SessionState>((set, get) => ({
       console.log('✅ Gateway session ended:', payload.summary);
     });
 
-    client.on('error', (payload) => {
-      console.error('❌ Gateway error:', payload.message);
-    });
+      client.on('error', (payload) => {
+        console.error('❌ Gateway error:', payload.message);
+      });
 
-    // Connect to Gateway
-    client.connect();
+      // Connect to Gateway
+      client.connect();
 
-    set({
-      gatewayClient: client,
-      isGatewayEnabled: true
-    });
+      set({
+        gatewayClient: client,
+        isGatewayEnabled: true
+      });
 
-    console.log('🔌 Gateway initialized:', gatewayUrl);
+      console.log('🔌 Gateway initialized:', gatewayUrl);
+    } else {
+      console.log('⚠️  Gateway disabled (not yet deployed)');
+      set({
+        gatewayClient: null,
+        isGatewayEnabled: false,
+        isGatewayConnected: false
+      });
+    }
   },
 
   disconnectGateway: () => {

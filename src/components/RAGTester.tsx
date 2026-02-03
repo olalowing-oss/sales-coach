@@ -86,12 +86,13 @@ export const RAGTester: React.FC<RAGTesterProps> = ({ onClose }) => {
     setSources([]);
 
     try {
-      const response = await fetch('/api/test-rag-stream', {
+      const response = await fetch('/api/answer-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           question: question.trim(),
           productId: selectedProductId,
+          context: ''
         }),
       });
 
@@ -99,45 +100,19 @@ export const RAGTester: React.FC<RAGTesterProps> = ({ onClose }) => {
         throw new Error('Request failed');
       }
 
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
+      const data = await response.json();
 
-      if (!reader) {
-        throw new Error('No response body');
+      // Set answer and sources from response
+      setAnswer(data.answer || 'Inget svar tillgängligt');
+      setSources(data.sources || []);
+
+      if (!data.sources || data.sources.length === 0) {
+        setError('Ingen relevant information hittades i kunskapsbasen');
       }
 
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-
-            if (data.type === 'sources') {
-              setSources(data.data);
-              if (data.data.length === 0) {
-                setError('Ingen relevant information hittades i kunskapsbasen');
-              }
-            } else if (data.type === 'chunk') {
-              setAnswer(prev => prev + data.data);
-            } else if (data.type === 'done') {
-              setIsLoading(false);
-            } else if (data.type === 'error') {
-              throw new Error(data.data);
-            }
-          }
-        }
-      }
+      setIsLoading(false);
     } catch (err: any) {
-      console.error('RAG stream error:', err);
+      console.error('RAG error:', err);
       setError(err.message || 'Kunde inte få svar från AI');
       setIsLoading(false);
     }
