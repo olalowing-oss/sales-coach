@@ -8,11 +8,9 @@ interface Product {
   description: string | null;
 }
 
-interface KnowledgeDocument {
-  id: string;
+interface Source {
   title: string;
-  content: string;
-  similarity: number;
+  excerpt: string;
 }
 
 interface RAGTesterProps {
@@ -25,7 +23,7 @@ export const RAGTester: React.FC<RAGTesterProps> = ({ onClose }) => {
   const [question, setQuestion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [answer, setAnswer] = useState('');
-  const [sources, setSources] = useState<KnowledgeDocument[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   // Example questions
@@ -252,19 +250,16 @@ export const RAGTester: React.FC<RAGTesterProps> = ({ onClose }) => {
             <div className="space-y-4">
               {sources.map((source, idx) => (
                 <div
-                  key={source.id}
+                  key={idx}
                   className="bg-gray-700 rounded-lg p-4 border border-gray-600"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-semibold text-white">
                       {idx + 1}. {source.title}
                     </h3>
-                    <span className="px-3 py-1 bg-green-900 bg-opacity-50 text-green-300 text-xs font-medium rounded-full">
-                      {(source.similarity * 100).toFixed(1)}% relevans
-                    </span>
                   </div>
                   <p className="text-gray-300 text-sm line-clamp-3">
-                    {source.content.slice(0, 300)}...
+                    {source.excerpt}
                   </p>
                 </div>
               ))}
