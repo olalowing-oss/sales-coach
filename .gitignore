@@ -39,3 +39,42 @@ lerna-debug.log*
 *.db
 *.sqlite
 .vercel
+
+# Documentation and implementation notes (keep README.md and docs/)
+AI-*.md
+CUSTOMER*.md
+DEMO*.md
+FEATURE*.md
+KLART*.md
+KUNDDATA*.md
+KUNDREGISTER*.md
+MEETING*.md
+MICROSOFT*.md
+MULTI*.md
+PRODUCT*.md
+PRODUKTADMIN*.md
+QUICK*.md
+RAG*.md
+SAMTALSVY*.md
+SELLER*.md
+SPEAKER*.md
+TESTING*.md
+
+# SQL migration and test scripts
+*.sql
+
+# Test scripts and files
+test-*.mjs
+test-*.js
+check-*.mjs
+*-test.js
+*-test.mjs
+
+# Audio test files
+*.mp3
+*.wav
+*.m4a
+
+# Development scripts
+setup-*.sh
+start-*.sh
