@@ -1,11 +1,23 @@
 import { supabase, isSupabaseConfigured } from './supabase';
 import type { CallSession, TranscriptSegment, CoachingTip } from '../types';
 import type { Database } from '../types/database';
+import { v4 as uuidv4 } from 'uuid';
 
 type DbSession = Database['public']['Tables']['call_sessions']['Row'];
 type DbSessionInsert = Database['public']['Tables']['call_sessions']['Insert'];
 type DbSegment = Database['public']['Tables']['transcript_segments']['Insert'];
 type DbTip = Database['public']['Tables']['session_coaching_tips']['Insert'];
+
+// Helper function to check if a string is a valid UUID
+function isValidUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+// Helper function to ensure ID is a valid UUID
+function ensureUUID(id: string): string {
+  return isValidUUID(id) ? id : uuidv4();
+}
 
 // ============================================
 // SESSION OPERATIONS
@@ -249,7 +261,7 @@ export async function saveSessionAnalysisToDb(
 // COACHING DATA OPERATIONS
 // ============================================
 
-export async function loadTriggerPatternsFromDb() {
+export async function loadTriggerPatternsFromDb(productId?: string | null) {
   if (!isSupabaseConfigured()) return null;
 
   try {
@@ -260,10 +272,17 @@ export async function loadTriggerPatternsFromDb() {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('trigger_patterns')
       .select('*')
       .eq('user_id', user.id);
+
+    // Filter by product if provided
+    if (productId) {
+      query = query.or(`product_id.eq.${productId},product_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading triggers:', error);
@@ -276,8 +295,20 @@ export async function loadTriggerPatternsFromDb() {
       patterns[row.id] = {
         keywords: row.keywords,
         response: row.response_type,
-        category: row.category
+        category: row.category,
+        productId: row.product_id
       };
+    });
+
+    // DEBUG: Log loaded trigger data
+    console.log('📥 Loaded triggers from DB:', {
+      count: data.length,
+      sampleRows: data.slice(0, 3).map(row => ({
+        id: row.id,
+        product_id: row.product_id,
+        product_id_type: typeof row.product_id
+      })),
+      uniqueProductIds: [...new Set(data.map(row => row.product_id || 'null'))]
     });
 
     return patterns;
@@ -301,13 +332,14 @@ export async function syncTriggerPatternsToDb(patterns: Record<string, any>) {
     // Delete existing user's patterns
     await supabase.from('trigger_patterns').delete().eq('user_id', user.id);
 
-    // Insert new
+    // Insert new - ensure all IDs are valid UUIDs
     const insertData = Object.entries(patterns).map(([id, pattern]) => ({
-      id,
+      id: ensureUUID(id),
       user_id: user.id,
       keywords: pattern.keywords,
       response_type: pattern.response,
-      category: pattern.category || null
+      category: pattern.category || null,
+      product_id: pattern.productId || null
     }));
 
     const { error } = await supabase
@@ -330,7 +362,7 @@ export async function syncTriggerPatternsToDb(patterns: Record<string, any>) {
 // BATTLECARDS
 // ============================================
 
-export async function loadBattlecardsFromDb() {
+export async function loadBattlecardsFromDb(productId?: string | null) {
   if (!isSupabaseConfigured()) return null;
 
   try {
@@ -341,10 +373,17 @@ export async function loadBattlecardsFromDb() {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('battlecards')
       .select('*')
       .eq('user_id', user.id);
+
+    // Filter by product if provided
+    if (productId) {
+      query = query.or(`product_id.eq.${productId},product_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading battlecards:', error);
@@ -358,7 +397,8 @@ export async function loadBattlecardsFromDb() {
       theirWeaknesses: row.their_weaknesses,
       ourAdvantages: row.our_advantages,
       talkingPoints: row.talking_points,
-      commonObjections: row.common_objections || []
+      commonObjections: row.common_objections || [],
+      productId: row.product_id
     }));
   } catch (error) {
     console.error('Error in loadBattlecardsFromDb:', error);
@@ -380,16 +420,17 @@ export async function syncBattlecardsToDb(battlecards: any[]) {
     // Delete existing user's battlecards
     await supabase.from('battlecards').delete().eq('user_id', user.id);
 
-    // Insert new
+    // Insert new - ensure all IDs are valid UUIDs
     const insertData = battlecards.map(bc => ({
-      id: bc.id,
+      id: ensureUUID(bc.id),
       user_id: user.id,
       competitor: bc.competitor,
       their_strengths: bc.theirStrengths,
       their_weaknesses: bc.theirWeaknesses,
       our_advantages: bc.ourAdvantages,
       talking_points: bc.talkingPoints,
-      common_objections: bc.commonObjections || []
+      common_objections: bc.commonObjections || [],
+      product_id: bc.productId || null
     }));
 
     const { error } = await supabase
@@ -412,7 +453,7 @@ export async function syncBattlecardsToDb(battlecards: any[]) {
 // OBJECTION HANDLERS
 // ============================================
 
-export async function loadObjectionHandlersFromDb() {
+export async function loadObjectionHandlersFromDb(productId?: string | null) {
   if (!isSupabaseConfigured()) return null;
 
   try {
@@ -423,10 +464,17 @@ export async function loadObjectionHandlersFromDb() {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('objection_handlers')
       .select('*')
       .eq('user_id', user.id);
+
+    // Filter by product if provided
+    if (productId) {
+      query = query.or(`product_id.eq.${productId},product_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading objections:', error);
@@ -442,7 +490,8 @@ export async function loadObjectionHandlersFromDb() {
         short: row.response_short,
         detailed: row.response_detailed,
         followUpQuestions: row.followup_questions
-      }
+      },
+      productId: row.product_id
     }));
   } catch (error) {
     console.error('Error in loadObjectionHandlersFromDb:', error);
@@ -464,16 +513,17 @@ export async function syncObjectionHandlersToDb(handlers: any[]) {
     // Delete existing user's objection handlers
     await supabase.from('objection_handlers').delete().eq('user_id', user.id);
 
-    // Insert new
+    // Insert new - ensure all IDs are valid UUIDs
     const insertData = handlers.map(oh => ({
-      id: oh.id,
+      id: ensureUUID(oh.id),
       user_id: user.id,
       objection: oh.objection,
       triggers: oh.triggers,
       category: oh.category,
       response_short: oh.responses.short,
       response_detailed: oh.responses.detailed,
-      followup_questions: oh.responses.followUpQuestions
+      followup_questions: oh.responses.followUpQuestions,
+      product_id: oh.productId || null
     }));
 
     const { error } = await supabase
@@ -496,7 +546,7 @@ export async function syncObjectionHandlersToDb(handlers: any[]) {
 // CASE STUDIES
 // ============================================
 
-export async function loadCaseStudiesFromDb() {
+export async function loadCaseStudiesFromDb(productId?: string | null) {
   if (!isSupabaseConfigured()) return null;
 
   try {
@@ -507,10 +557,17 @@ export async function loadCaseStudiesFromDb() {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('case_studies')
       .select('*')
       .eq('user_id', user.id);
+
+    // Filter by product if provided
+    if (productId) {
+      query = query.or(`product_id.eq.${productId},product_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading cases:', error);
@@ -525,7 +582,8 @@ export async function loadCaseStudiesFromDb() {
       solution: row.solution,
       results: row.results,
       quote: row.quote || undefined,
-      isPublic: row.is_public ?? true
+      isPublic: row.is_public ?? true,
+      productId: row.product_id
     }));
   } catch (error) {
     console.error('Error in loadCaseStudiesFromDb:', error);
@@ -547,9 +605,9 @@ export async function syncCaseStudiesToDb(cases: any[]) {
     // Delete existing user's case studies
     await supabase.from('case_studies').delete().eq('user_id', user.id);
 
-    // Insert new
+    // Insert new - ensure all IDs are valid UUIDs
     const insertData = cases.map(cs => ({
-      id: cs.id,
+      id: ensureUUID(cs.id),
       user_id: user.id,
       customer: cs.customer,
       industry: cs.industry,
@@ -557,7 +615,8 @@ export async function syncCaseStudiesToDb(cases: any[]) {
       solution: cs.solution,
       results: cs.results,
       quote: cs.quote || null,
-      is_public: cs.isPublic
+      is_public: cs.isPublic,
+      product_id: cs.productId || null
     }));
 
     const { error } = await supabase
@@ -580,7 +639,7 @@ export async function syncCaseStudiesToDb(cases: any[]) {
 // OFFERS
 // ============================================
 
-export async function loadOffersFromDb() {
+export async function loadOffersFromDb(productId?: string | null) {
   if (!isSupabaseConfigured()) return null;
 
   try {
@@ -591,10 +650,17 @@ export async function loadOffersFromDb() {
       return null;
     }
 
-    const { data, error } = await supabase
+    let query = supabase
       .from('offers')
       .select('*')
       .eq('user_id', user.id);
+
+    // Filter by product if provided
+    if (productId) {
+      query = query.or(`product_id.eq.${productId},product_id.is.null`);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error('Error loading offers:', error);
@@ -614,7 +680,8 @@ export async function loadOffersFromDb() {
         unit: row.price_unit
       },
       targetAudience: row.target_audience || [],
-      relatedCases: row.related_cases || []
+      relatedCases: row.related_cases || [],
+      productId: row.product_id
     }));
   } catch (error) {
     console.error('Error in loadOffersFromDb:', error);
@@ -636,9 +703,9 @@ export async function syncOffersToDb(offers: any[]) {
     // Delete existing user's offers
     await supabase.from('offers').delete().eq('user_id', user.id);
 
-    // Insert new
+    // Insert new - ensure all IDs are valid UUIDs
     const insertData = offers.map(offer => ({
-      id: offer.id,
+      id: ensureUUID(offer.id),
       user_id: user.id,
       name: offer.name,
       short_description: offer.shortDescription,
@@ -649,7 +716,8 @@ export async function syncOffersToDb(offers: any[]) {
       price_max: offer.priceRange.max,
       price_unit: offer.priceRange.unit,
       target_audience: offer.targetAudience || [],
-      related_cases: offer.relatedCases || []
+      related_cases: offer.relatedCases || [],
+      product_id: offer.productId || null
     }));
 
     const { error } = await supabase

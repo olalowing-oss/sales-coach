@@ -60,6 +60,21 @@ Fokusera på:
 - Uppskattad affärsstorlek
 - Sannolikhet för affär (0-100%)
 
+VIKTIGT - Generera uppföljningsfrågor:
+Identifiera kritisk information som SAKNAS eller är OTYDLIG från samtalet. För varje gap, generera en uppföljningsfråga:
+- Var specifik och handlingsbar
+- Fokusera på information som påverkar affären
+- Prioritera frågor som hjälper till att kvalificera leaden
+- Inkludera max 8 frågor (de viktigaste)
+- Kategorisera: Ekonomi, Tekniskt, Beslutsprocess, Behov, Konkurrens, Tidslinje
+- Ange prioritet: Hög (kritiskt för affären), Medel (viktigt), Låg (bra att veta)
+
+Exempel på viktiga gaps:
+- Budget inte diskuterad → "Vilken budget har ni avsatt för detta projekt?"
+- Beslutsfattare oklar → "Vem fattar det slutgiltiga beslutet om denna investering?"
+- Tekniska krav vaga → "Vilka specifika integrationskrav har IT-avdelningen?"
+- Tidslinje saknas → "När behöver lösningen vara på plats?"
+
 Basera din analys på det faktiska samtalsinnehållet. Var konservativ med sannolikheten - ge högre värden endast när kunden visar tydliga köpsignaler.`
         },
         {
@@ -154,6 +169,34 @@ ${JSON.stringify(existingAnalysis, null, 2)}` : ''}`
                 type: 'array',
                 items: { type: 'string' },
                 description: 'Key topics discussed'
+              },
+              suggestedFollowUpQuestions: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: {
+                    question: {
+                      type: 'string',
+                      description: 'The follow-up question to ask'
+                    },
+                    reason: {
+                      type: 'string',
+                      description: 'Why this question is important (what information is missing)'
+                    },
+                    category: {
+                      type: 'string',
+                      enum: ['Ekonomi', 'Tekniskt', 'Beslutsprocess', 'Behov', 'Konkurrens', 'Tidslinje'],
+                      description: 'Category of the question'
+                    },
+                    priority: {
+                      type: 'string',
+                      enum: ['Hög', 'Medel', 'Låg'],
+                      description: 'How important is this question'
+                    }
+                  },
+                  required: ['question', 'reason', 'category', 'priority']
+                },
+                description: 'Suggested follow-up questions based on missing or unclear information from the call. Max 8 questions, prioritize critical gaps.'
               }
             },
             required: ['probability']

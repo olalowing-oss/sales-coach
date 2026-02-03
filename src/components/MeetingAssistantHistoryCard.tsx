@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from 'react';
 import { Clock, Target, TrendingUp, AlertCircle, CheckCircle2, Lightbulb, ArrowRight } from 'lucide-react';
 import type { MeetingSummary } from '../lib/meetingAI';

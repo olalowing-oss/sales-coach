@@ -42,9 +42,73 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
-/* Smooth transitions */
-* {
+/* Smooth transitions - exclude inputs to avoid color transition issues */
+*:not(input):not(textarea):not(select) {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
+}
+
+/* Force light color scheme for the entire app */
+:root {
+  color-scheme: light;
+}
+
+/* Force visible input text with maximum specificity */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input,
+.force-visible-input {
+  color: rgb(17, 24, 39) !important;
+  background-color: rgb(255, 255, 255) !important;
+  -webkit-text-fill-color: rgb(17, 24, 39) !important;
+  color-scheme: light !important;
+  transition: none !important;
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+input::placeholder,
+.force-visible-input::placeholder {
+  color: rgb(156, 163, 175) !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: rgb(156, 163, 175) !important;
+}
+
+input[type="text"]:-webkit-autofill,
+input[type="email"]:-webkit-autofill,
+input[type="password"]:-webkit-autofill,
+input:-webkit-autofill,
+.force-visible-input:-webkit-autofill,
+input[type="text"]:-webkit-autofill:hover,
+input[type="email"]:-webkit-autofill:hover,
+input[type="password"]:-webkit-autofill:hover,
+input:-webkit-autofill:hover,
+.force-visible-input:-webkit-autofill:hover,
+input[type="text"]:-webkit-autofill:focus,
+input[type="email"]:-webkit-autofill:focus,
+input[type="password"]:-webkit-autofill:focus,
+input:-webkit-autofill:focus,
+.force-visible-input:-webkit-autofill:focus,
+input[type="text"]:-webkit-autofill:active,
+input[type="email"]:-webkit-autofill:active,
+input[type="password"]:-webkit-autofill:active,
+input:-webkit-autofill:active,
+.force-visible-input:-webkit-autofill:active {
+  -webkit-text-fill-color: rgb(17, 24, 39) !important;
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+  box-shadow: 0 0 0 1000px white inset !important;
+  transition: background-color 5000s ease-in-out 0s !important;
+}
+
+/* Extra specificity for light backgrounds */
+.bg-white input,
+.bg-gray-50 input,
+[class*="bg-white"] input,
+div[class*="bg-white"] input {
+  color: rgb(17, 24, 39) !important;
+  background-color: rgb(255, 255, 255) !important;
+  -webkit-text-fill-color: rgb(17, 24, 39) !important;
 }

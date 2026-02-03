@@ -124,13 +124,13 @@ export const TrainingMode: React.FC<TrainingModeProps> = ({ onClose }) => {
   }, [currentFeedback]);
 
   // Fetch training scenarios directly from Supabase (much faster than API proxy)
+  // RLS policy automatically filters based on user's product access
   useEffect(() => {
     const fetchScenarios = async () => {
       try {
         const { data, error } = await supabase
           .from('training_scenarios')
           .select('*')
-          .eq('is_global', true)
           .order('difficulty', { ascending: true })
           .order('name', { ascending: true });
 

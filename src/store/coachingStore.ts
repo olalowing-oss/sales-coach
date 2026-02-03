@@ -1,12 +1,13 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
-import { Battlecard, ObjectionHandler, CaseStudy, TriggerPattern } from '../types';
+import { Battlecard, ObjectionHandler, CaseStudy, TriggerPattern, Offer } from '../types';
 import {
   TRIGGER_PATTERNS as DEFAULT_TRIGGERS,
   BATTLECARDS as DEFAULT_BATTLECARDS,
   OBJECTION_HANDLERS as DEFAULT_OBJECTIONS,
-  CASE_STUDIES as DEFAULT_CASES
+  CASE_STUDIES as DEFAULT_CASES,
+  OFFERS as DEFAULT_OFFERS
 } from '../data/knowledgeBase';
 import {
   loadTriggerPatternsFromDb,
@@ -16,8 +17,11 @@ import {
   loadObjectionHandlersFromDb,
   syncObjectionHandlersToDb,
   loadCaseStudiesFromDb,
-  syncCaseStudiesToDb
+  syncCaseStudiesToDb,
+  loadOffersFromDb,
+  syncOffersToDb
 } from '../lib/supabaseOperations';
+import { useSessionStore } from './sessionStore';
 
 interface CoachingDataState {
   // Data
@@ -25,6 +29,7 @@ interface CoachingDataState {
   battlecards: Battlecard[];
   objectionHandlers: ObjectionHandler[];
   caseStudies: CaseStudy[];
+  offers: Offer[];
 
   // Initialize from database
   initializeFromDb: () => Promise<void>;
@@ -49,6 +54,11 @@ interface CoachingDataState {
   updateCaseStudy: (id: string, caseStudy: Partial<CaseStudy>) => void;
   deleteCaseStudy: (id: string) => void;
 
+  // Offer actions
+  addOffer: (offer: Omit<Offer, 'id'>) => void;
+  updateOffer: (id: string, offer: Partial<Offer>) => void;
+  deleteOffer: (id: string) => void;
+
   // Reset
   resetToDefaults: () => void;
 }
@@ -61,15 +71,21 @@ export const useCoachingStore = create<CoachingDataState>()(
       battlecards: DEFAULT_BATTLECARDS,
       objectionHandlers: DEFAULT_OBJECTIONS,
       caseStudies: DEFAULT_CASES,
+      offers: DEFAULT_OFFERS,
 
       // === INITIALIZE FROM DATABASE ===
       initializeFromDb: async () => {
+        // Get user's active product ID from sessionStore
+        const userProductId = useSessionStore.getState().userProductId;
+        console.log('📦 Loading coaching data for product:', userProductId || 'all products');
+
         // ALWAYS ensure we have default data first
         const currentState = get();
         const hasLocalData = Object.keys(currentState.triggerPatterns).length > 0 ||
                             currentState.battlecards.length > 0 ||
                             currentState.objectionHandlers.length > 0 ||
-                            currentState.caseStudies.length > 0;
+                            currentState.caseStudies.length > 0 ||
+                            currentState.offers.length > 0;
 
         if (!hasLocalData) {
           console.log('📦 Store är tomt, laddar defaults...');
@@ -77,16 +93,19 @@ export const useCoachingStore = create<CoachingDataState>()(
             triggerPatterns: DEFAULT_TRIGGERS,
             battlecards: DEFAULT_BATTLECARDS,
             objectionHandlers: DEFAULT_OBJECTIONS,
-            caseStudies: DEFAULT_CASES
+            caseStudies: DEFAULT_CASES,
+            offers: DEFAULT_OFFERS
           });
         }
 
         try {
-          const [triggers, battlecards, objections, cases] = await Promise.all([
-            loadTriggerPatternsFromDb(),
-            loadBattlecardsFromDb(),
-            loadObjectionHandlersFromDb(),
-            loadCaseStudiesFromDb()
+          // Load data filtered by product
+          const [triggers, battlecards, objections, cases, offers] = await Promise.all([
+            loadTriggerPatternsFromDb(userProductId),
+            loadBattlecardsFromDb(userProductId),
+            loadObjectionHandlersFromDb(userProductId),
+            loadCaseStudiesFromDb(userProductId),
+            loadOffersFromDb(userProductId)
           ]);
 
           // Check if database has any data for this user
@@ -94,7 +113,8 @@ export const useCoachingStore = create<CoachingDataState>()(
             (triggers && Object.keys(triggers).length > 0) ||
             (battlecards && battlecards.length > 0) ||
             (objections && objections.length > 0) ||
-            (cases && cases.length > 0);
+            (cases && cases.length > 0) ||
+            (offers && offers.length > 0);
 
           if (!hasDbData) {
             // Database is empty for this user - sync current store data to database
@@ -105,7 +125,8 @@ export const useCoachingStore = create<CoachingDataState>()(
               syncTriggerPatternsToDb(state.triggerPatterns),
               syncBattlecardsToDb(state.battlecards),
               syncObjectionHandlersToDb(state.objectionHandlers),
-              syncCaseStudiesToDb(state.caseStudies)
+              syncCaseStudiesToDb(state.caseStudies),
+              syncOffersToDb(state.offers)
             ]);
 
             console.log('✅ Default coaching-data synkad till databas');
@@ -117,6 +138,7 @@ export const useCoachingStore = create<CoachingDataState>()(
             if (battlecards && battlecards.length > 0) updates.battlecards = battlecards;
             if (objections && objections.length > 0) updates.objectionHandlers = objections;
             if (cases && cases.length > 0) updates.caseStudies = cases;
+            if (offers && offers.length > 0) updates.offers = offers;
 
             if (Object.keys(updates).length > 0) {
               set(updates);
@@ -249,13 +271,44 @@ export const useCoachingStore = create<CoachingDataState>()(
           return { caseStudies: updated };
         }),
 
+      // === OFFERS ===
+      addOffer: (offer) =>
+        set((state) => {
+          const updated = [...state.offers, { ...offer, id: uuidv4() }];
+          syncOffersToDb(updated).catch(err =>
+            console.error('Failed to sync offers to DB:', err)
+          );
+          return { offers: updated };
+        }),
+
+      updateOffer: (id, offer) =>
+        set((state) => {
+          const updated = state.offers.map((o) =>
+            o.id === id ? { ...o, ...offer } : o
+          );
+          syncOffersToDb(updated).catch(err =>
+            console.error('Failed to sync offers to DB:', err)
+          );
+          return { offers: updated };
+        }),
+
+      deleteOffer: (id) =>
+        set((state) => {
+          const updated = state.offers.filter((o) => o.id !== id);
+          syncOffersToDb(updated).catch(err =>
+            console.error('Failed to sync offers to DB:', err)
+          );
+          return { offers: updated };
+        }),
+
       // === RESET ===
       resetToDefaults: () => {
         set({
           triggerPatterns: DEFAULT_TRIGGERS,
           battlecards: DEFAULT_BATTLECARDS,
           objectionHandlers: DEFAULT_OBJECTIONS,
-          caseStudies: DEFAULT_CASES
+          caseStudies: DEFAULT_CASES,
+          offers: DEFAULT_OFFERS
         });
 
         // Sync defaults to DB
@@ -264,7 +317,8 @@ export const useCoachingStore = create<CoachingDataState>()(
           syncTriggerPatternsToDb(state.triggerPatterns),
           syncBattlecardsToDb(state.battlecards),
           syncObjectionHandlersToDb(state.objectionHandlers),
-          syncCaseStudiesToDb(state.caseStudies)
+          syncCaseStudiesToDb(state.caseStudies),
+          syncOffersToDb(state.offers)
         ]).catch(err => console.error('Failed to sync defaults to DB:', err));
       }
     }),

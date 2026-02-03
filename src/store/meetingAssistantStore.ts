@@ -19,6 +19,8 @@ export interface MeetingNote {
     timeline?: string;
     painPoint?: string;
     competitor?: string;
+    decision_maker?: string;
+    key_requirement?: string;
   };
 }
 

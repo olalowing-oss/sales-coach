@@ -11,10 +11,16 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true
       }
+    },
+    hmr: {
+      overlay: true
     }
   },
   build: {
     outDir: 'dist',
     sourcemap: true
+  },
+  optimizeDeps: {
+    force: true
   }
 });

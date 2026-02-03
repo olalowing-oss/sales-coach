@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
-// @ts-ignore - pdf-parse doesn't have good types
-import pdf from 'pdf-parse/lib/pdf-parse.js';
-import mammoth from 'mammoth';
+// PDF parsing temporarily disabled - not used in current implementation
+// import * as pdfParse from 'pdf-parse';
+// import mammoth from 'mammoth';
 import * as cheerio from 'cheerio';
 
 // Initialize Supabase client

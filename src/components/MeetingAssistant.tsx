@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useMeetingAssistantStore } from '../store/meetingAssistantStore';
 import { MeetingQuickInput } from './MeetingQuickInput';
@@ -18,7 +18,6 @@ export function MeetingAssistant({ onClose }: MeetingAssistantProps) {
   const {
     isActive,
     customer,
-    productId,
     liveSummary,
     updateLiveSummary,
     aiAnswers,

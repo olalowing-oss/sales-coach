@@ -69,6 +69,7 @@ export interface Offer {
   };
   targetAudience: string[];
   relatedCases: string[];
+  productId?: string | null;
 }
 
 export interface Battlecard {
@@ -79,6 +80,7 @@ export interface Battlecard {
   ourAdvantages: string[];
   talkingPoints: string[];
   commonObjections: string[];
+  productId?: string | null;
 }
 
 export type ObjectionCategory = 'price' | 'timing' | 'competition' | 'trust' | 'need';
@@ -93,6 +95,7 @@ export interface ObjectionHandler {
     detailed: string;
     followUpQuestions: string[];
   };
+  productId?: string | null;
 }
 
 export interface CaseStudy {
@@ -104,6 +107,7 @@ export interface CaseStudy {
   results: string[];
   quote?: string;
   isPublic: boolean;
+  productId?: string | null;
 }
 
 // === TRIGGERS ===
@@ -111,6 +115,7 @@ export interface TriggerPattern {
   keywords: string[];
   response: 'objection' | 'battlecard' | 'offer' | 'solution' | 'expand';
   category?: string;
+  productId?: string | null;
 }
 
 export interface DetectedTrigger {
@@ -125,8 +130,8 @@ export interface DetectedTrigger {
 export type SessionStatus = 'idle' | 'recording' | 'paused' | 'stopped';
 
 export interface CustomerInfo {
-  name: string;
   company: string;
+  name?: string;
   role?: string;
 }
 
@@ -251,4 +256,50 @@ export interface SearchResult {
 
 export interface SearchResponse {
   results: SearchResult[];
+}
+
+// === DEMO SCRIPTS ===
+export interface DemoStep {
+  id: string;
+  title: string;
+  description: string;
+  talkingPoints: string[];
+  expectedQuestions?: string[];
+  tips?: string[];
+}
+
+export interface DemoQuestion {
+  question: string;
+  answer: string;
+  category?: string;
+}
+
+export interface DemoScript {
+  id: string;
+  userId: string;
+  productId: string;
+
+  // Demo metadata
+  name: string;
+  description?: string;
+  durationMinutes?: number;
+  targetAudience?: string;
+
+  // Demo structure
+  openingHook: string;
+  keyTalkingPoints: string[];
+  demoFlow: DemoStep[];
+
+  // Interactive elements
+  commonQuestions?: DemoQuestion[];
+  objectionHandling?: { objection: string; response: string }[];
+
+  // Success metrics
+  successCriteria?: string[];
+  nextSteps?: string[];
+
+  // Metadata
+  isActive: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

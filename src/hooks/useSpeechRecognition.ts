@@ -6,8 +6,9 @@ interface UseSpeechRecognitionOptions {
   subscriptionKey: string;
   region: string;
   language?: string;
-  onInterimResult?: (text: string) => void;
-  onFinalResult?: (text: string, confidence: number) => void;
+  enableDiarization?: boolean; // Enable speaker diarization
+  onInterimResult?: (text: string, speaker?: string) => void;
+  onFinalResult?: (text: string, confidence: number, speaker?: string) => void;
   onError?: (error: string) => void;
   onStatusChange?: (status: 'idle' | 'listening' | 'error') => void;
 }
@@ -37,6 +38,7 @@ export const useSpeechRecognition = ({
   subscriptionKey,
   region,
   language = 'sv-SE',
+  enableDiarization = true,
   onInterimResult,
   onFinalResult,
   onError,
@@ -47,8 +49,9 @@ export const useSpeechRecognition = ({
   const [error, setError] = useState<string | null>(null);
   const [interimTranscript, setInterimTranscript] = useState('');
 
-  const recognizerRef = useRef<SpeechSDK.SpeechRecognizer | null>(null);
+  const recognizerRef = useRef<SpeechSDK.SpeechRecognizer | SpeechSDK.ConversationTranscriber | null>(null);
   const audioConfigRef = useRef<SpeechSDK.AudioConfig | null>(null);
+  const speakerMapRef = useRef<Map<string, 'seller' | 'customer'>>(new Map());
 
   // Cleanup vid unmount
   useEffect(() => {
@@ -89,66 +92,155 @@ export const useSpeechRecognition = ({
       // Skapa audio config från mikrofon
       audioConfigRef.current = SpeechSDK.AudioConfig.fromDefaultMicrophoneInput();
 
-      // Skapa recognizer
-      recognizerRef.current = new SpeechSDK.SpeechRecognizer(
-        speechConfig,
-        audioConfigRef.current
-      );
+      if (enableDiarization) {
+        // === SPEAKER DIARIZATION MODE ===
+        console.log('🎤 Starting with speaker diarization enabled');
 
-      // Event handlers
-      recognizerRef.current.recognizing = (_, event) => {
-        if (event.result.reason === SpeechSDK.ResultReason.RecognizingSpeech) {
+        // Create conversation transcriber for speaker diarization
+        const transcriber = new SpeechSDK.ConversationTranscriber(
+          speechConfig,
+          audioConfigRef.current
+        );
+
+        recognizerRef.current = transcriber;
+
+        // Reset speaker mapping
+        speakerMapRef.current.clear();
+
+        // Map speaker IDs to roles (first speaker = seller, second = customer)
+        const mapSpeaker = (speakerId: string): 'seller' | 'customer' => {
+          if (!speakerMapRef.current.has(speakerId)) {
+            // First speaker detected = seller (you), second = customer
+            const role = speakerMapRef.current.size === 0 ? 'seller' : 'customer';
+            speakerMapRef.current.set(speakerId, role);
+            console.log(`🎤 New speaker detected: ${speakerId} → ${role}`);
+          }
+          return speakerMapRef.current.get(speakerId)!;
+        };
+
+        // Event handlers for diarization
+        transcriber.transcribing = (_, event) => {
+          const speakerId = event.result.speakerId || 'Unknown';
           const text = event.result.text;
-          setInterimTranscript(text);
-          onInterimResult?.(text);
-        }
-      };
+          const speaker = mapSpeaker(speakerId);
 
-      recognizerRef.current.recognized = (_, event) => {
-        if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
-          const text = event.result.text;
-          const confidence = calculateConfidence(event.result);
+          if (text) {
+            setInterimTranscript(text);
+            onInterimResult?.(text, speaker);
+          }
+        };
 
-          setInterimTranscript('');
-          onFinalResult?.(text, confidence);
-        } else if (event.result.reason === SpeechSDK.ResultReason.NoMatch) {
-          // Tystnad eller ohörbart - ignorera
-        }
-      };
+        transcriber.transcribed = (_, event) => {
+          if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+            const speakerId = event.result.speakerId || 'Unknown';
+            const text = event.result.text;
+            const speaker = mapSpeaker(speakerId);
+            const confidence = calculateConfidence(event.result);
 
-      recognizerRef.current.canceled = (_, event) => {
-        if (event.reason === SpeechSDK.CancellationReason.Error) {
-          const errorMsg = `Speech recognition error: ${event.errorDetails}`;
-          setError(errorMsg);
-          updateStatus('error');
-          onError?.(errorMsg);
-        }
-        setIsListening(false);
-      };
+            setInterimTranscript('');
+            onFinalResult?.(text, confidence, speaker);
+          }
+        };
 
-      recognizerRef.current.sessionStopped = () => {
-        setIsListening(false);
-        updateStatus('idle');
-      };
-
-      // Starta kontinuerlig igenkänning
-      await new Promise<void>((resolve, reject) => {
-        recognizerRef.current!.startContinuousRecognitionAsync(
-          () => {
-            setIsListening(true);
-            setError(null);
-            updateStatus('listening');
-            resolve();
-          },
-          (err) => {
-            const errorMsg = `Failed to start recognition: ${err}`;
+        transcriber.canceled = (_, event) => {
+          if (event.reason === SpeechSDK.CancellationReason.Error) {
+            const errorMsg = `Speech transcription error: ${event.errorDetails}`;
             setError(errorMsg);
             updateStatus('error');
             onError?.(errorMsg);
-            reject(new Error(errorMsg));
           }
+          setIsListening(false);
+        };
+
+        transcriber.sessionStopped = () => {
+          setIsListening(false);
+          updateStatus('idle');
+        };
+
+        // Start transcribing
+        await new Promise<void>((resolve, reject) => {
+          transcriber.startTranscribingAsync(
+            () => {
+              setIsListening(true);
+              setError(null);
+              updateStatus('listening');
+              console.log('✅ Conversation transcriber started');
+              resolve();
+            },
+            (err: any) => {
+              const errorMsg = `Failed to start transcription: ${err}`;
+              setError(errorMsg);
+              updateStatus('error');
+              onError?.(errorMsg);
+              reject(new Error(errorMsg));
+            }
+          );
+        });
+
+      } else {
+        // === STANDARD MODE (no diarization) ===
+        const recognizer = new SpeechSDK.SpeechRecognizer(
+          speechConfig,
+          audioConfigRef.current
         );
-      });
+
+        recognizerRef.current = recognizer;
+
+        // Event handlers
+        recognizer.recognizing = (_, event) => {
+          if (event.result.reason === SpeechSDK.ResultReason.RecognizingSpeech) {
+            const text = event.result.text;
+            setInterimTranscript(text);
+            onInterimResult?.(text);
+          }
+        };
+
+        recognizer.recognized = (_, event) => {
+          if (event.result.reason === SpeechSDK.ResultReason.RecognizedSpeech) {
+            const text = event.result.text;
+            const confidence = calculateConfidence(event.result);
+
+            setInterimTranscript('');
+            onFinalResult?.(text, confidence);
+          } else if (event.result.reason === SpeechSDK.ResultReason.NoMatch) {
+            // Tystnad eller ohörbart - ignorera
+          }
+        };
+
+        recognizer.canceled = (_, event) => {
+          if (event.reason === SpeechSDK.CancellationReason.Error) {
+            const errorMsg = `Speech recognition error: ${event.errorDetails}`;
+            setError(errorMsg);
+            updateStatus('error');
+            onError?.(errorMsg);
+          }
+          setIsListening(false);
+        };
+
+        recognizer.sessionStopped = () => {
+          setIsListening(false);
+          updateStatus('idle');
+        };
+
+        // Starta kontinuerlig igenkänning
+        await new Promise<void>((resolve, reject) => {
+          recognizer.startContinuousRecognitionAsync(
+            () => {
+              setIsListening(true);
+              setError(null);
+              updateStatus('listening');
+              resolve();
+            },
+            (err: any) => {
+              const errorMsg = `Failed to start recognition: ${err}`;
+              setError(errorMsg);
+              updateStatus('error');
+              onError?.(errorMsg);
+              reject(new Error(errorMsg));
+            }
+          );
+        });
+      }
 
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -156,22 +248,38 @@ export const useSpeechRecognition = ({
       updateStatus('error');
       onError?.(errorMsg);
     }
-  }, [subscriptionKey, region, language, onInterimResult, onFinalResult, onError, updateStatus]);
+  }, [subscriptionKey, region, language, enableDiarization, onInterimResult, onFinalResult, onError, updateStatus]);
 
   const stopListening = useCallback(() => {
     if (recognizerRef.current) {
-      recognizerRef.current.stopContinuousRecognitionAsync(
-        () => {
-          setIsListening(false);
-          setInterimTranscript('');
-          updateStatus('idle');
-        },
-        (err) => {
-          console.error('Error stopping recognition:', err);
-          setIsListening(false);
-          updateStatus('idle');
-        }
-      );
+      // Check if it's a ConversationTranscriber or SpeechRecognizer
+      if (recognizerRef.current instanceof SpeechSDK.ConversationTranscriber) {
+        recognizerRef.current.stopTranscribingAsync(
+          () => {
+            setIsListening(false);
+            setInterimTranscript('');
+            updateStatus('idle');
+          },
+          (err: any) => {
+            console.error('Error stopping transcription:', err);
+            setIsListening(false);
+            updateStatus('idle');
+          }
+        );
+      } else {
+        recognizerRef.current.stopContinuousRecognitionAsync(
+          () => {
+            setIsListening(false);
+            setInterimTranscript('');
+            updateStatus('idle');
+          },
+          (err: any) => {
+            console.error('Error stopping recognition:', err);
+            setIsListening(false);
+            updateStatus('idle');
+          }
+        );
+      }
     }
   }, [updateStatus]);
 
@@ -188,7 +296,7 @@ export const useSpeechRecognition = ({
 /**
  * Beräknar konfidens från recognition result
  */
-const calculateConfidence = (result: SpeechSDK.SpeechRecognitionResult): number => {
+const calculateConfidence = (result: SpeechSDK.SpeechRecognitionResult | SpeechSDK.ConversationTranscriptionResult): number => {
   // Azure Speech SDK ger inte alltid confidence direkt
   // Vi kan använda best av NBest om tillgängligt
   try {

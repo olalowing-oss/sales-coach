@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { X, Save, Sparkles, Zap } from 'lucide-react';
+import { X, Save, Sparkles, Zap, FileText, HelpCircle, ClipboardList } from 'lucide-react';
 import type { CallAnalysis } from '../types';
 import { analyzeTranscriptWithAI, isAIAnalysisAvailable } from '../utils/aiAnalyzer';
+import { PostCallQuestionnaire } from './PostCallQuestionnaire';
+import { SuggestedQuestions, SuggestedQuestion } from './SuggestedQuestions';
 
 interface CallAnalysisModalProps {
   sessionId: string;
@@ -52,6 +54,11 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
     keyTopic: ''
   });
 
+  // New state for tabs and enhanced features
+  const [activeTab, setActiveTab] = useState<'basic' | 'questionnaire' | 'followup'>('basic');
+  const [questionnaireAnswers, setQuestionnaireAnswers] = useState<Record<string, string>>({});
+  const [suggestedQuestions, setSuggestedQuestions] = useState<SuggestedQuestion[]>([]);
+
   const handleAIAnalyze = async () => {
     if (!isAIAnalysisAvailable()) {
       alert('OpenAI API-nyckel saknas. Konfigurera VITE_OPENAI_API_KEY i .env');
@@ -63,12 +70,24 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
       const aiAnalysis = await analyzeTranscriptWithAI(transcript, analysis);
 
       if (Object.keys(aiAnalysis).length > 0) {
+        // Extract suggested questions if available
+        const questions = (aiAnalysis as any).suggestedFollowUpQuestions;
+        if (questions && Array.isArray(questions)) {
+          setSuggestedQuestions(questions);
+          console.log('📋 Suggested follow-up questions:', questions);
+        }
+
         setAnalysis(prev => ({
           ...prev,
           ...aiAnalysis,
           isAnalyzed: true
         }));
         console.log('🤖 AI Analysis completed:', aiAnalysis);
+
+        // Switch to follow-up tab if we have suggested questions
+        if (questions && questions.length > 0) {
+          setActiveTab('followup');
+        }
       } else {
         alert('AI-analys returnerade inget resultat. Försök igen.');
       }
@@ -139,9 +158,60 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
           </button>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="border-b border-gray-700 px-6">
+          <div className="flex gap-1">
+            <button
+              onClick={() => setActiveTab('basic')}
+              className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 ${
+                activeTab === 'basic'
+                  ? 'border-teal-400 text-teal-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <FileText className="w-4 h-4" />
+              Grundläggande Info
+            </button>
+            <button
+              onClick={() => setActiveTab('questionnaire')}
+              className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 ${
+                activeTab === 'questionnaire'
+                  ? 'border-teal-400 text-teal-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <ClipboardList className="w-4 h-4" />
+              Frågeformulär
+              {Object.keys(questionnaireAnswers).length > 0 && (
+                <span className="px-2 py-0.5 bg-teal-500/20 text-teal-300 rounded-full text-xs">
+                  {Object.keys(questionnaireAnswers).filter(k => questionnaireAnswers[k].trim()).length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('followup')}
+              className={`px-4 py-3 text-sm font-medium transition-colors flex items-center gap-2 border-b-2 ${
+                activeTab === 'followup'
+                  ? 'border-teal-400 text-teal-400'
+                  : 'border-transparent text-gray-400 hover:text-white'
+              }`}
+            >
+              <HelpCircle className="w-4 h-4" />
+              Uppföljningsfrågor
+              {suggestedQuestions.length > 0 && (
+                <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-300 rounded-full text-xs">
+                  {suggestedQuestions.length}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* Body */}
         <div className="p-6 space-y-8">
-          {/* Grundläggande information */}
+          {/* Tab: Grundläggande information */}
+          {activeTab === 'basic' && (
+          <>
           <section>
             <h3 className="text-lg font-semibold text-white mb-4">Grundläggande information</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -498,6 +568,55 @@ export const CallAnalysisModal: React.FC<CallAnalysisModalProps> = ({
               </div>
             </div>
           </section>
+          </>
+          )}
+
+          {/* Tab: Frågeformulär */}
+          {activeTab === 'questionnaire' && (
+            <section>
+              <PostCallQuestionnaire
+                onAnswersChange={setQuestionnaireAnswers}
+                initialAnswers={questionnaireAnswers}
+                aiFilledQuestions={new Set()}
+              />
+            </section>
+          )}
+
+          {/* Tab: Uppföljningsfrågor */}
+          {activeTab === 'followup' && (
+            <section>
+              {suggestedQuestions.length > 0 ? (
+                <SuggestedQuestions
+                  questions={suggestedQuestions}
+                  onQuestionAnswered={(question, answer) => {
+                    console.log('Question answered:', question.question, 'Answer:', answer);
+                    // Could save this to a separate field if needed
+                  }}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <HelpCircle className="w-16 h-16 text-gray-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-white mb-2">
+                    Inga uppföljningsfrågor ännu
+                  </h3>
+                  <p className="text-gray-400 mb-6">
+                    Kör AI-analys för att automatiskt generera uppföljningsfrågor<br />
+                    baserat på saknad information från samtalet.
+                  </p>
+                  {isAIAnalysisAvailable() && (
+                    <button
+                      onClick={handleAIAnalyze}
+                      disabled={isAnalyzing}
+                      className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors inline-flex items-center gap-2"
+                    >
+                      <Zap className="w-4 h-4" />
+                      Kör AI-analys
+                    </button>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
         </div>
 
         {/* Footer */}
